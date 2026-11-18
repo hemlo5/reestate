@@ -1,0 +1,105 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --font-display: var(--font-jakarta, "Plus Jakarta Sans"), -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-body: var(--font-dm-sans, "DM Sans"), -apple-system, BlinkMacSystemFont, sans-serif;
+    --color-ink: #0b1324;
+    --color-muted: #5e687a;
+    --color-surface: #f7f8fa;
+    --color-border: #e6e9ef;
+    --color-accent: #1a56ff;
+    --color-accent-hover: #1244d8;
+  }
+
+  html {
+    font-family: var(--font-body);
+    color: var(--color-ink);
+    background-color: #ffffff;
+    scroll-behavior: smooth;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  .font-display {
+    font-family: var(--font-display);
+  }
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+.text-balance {
+  text-wrap: balance;
+}
+
+/* Custom subtle scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #d5dbe5;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #9aa5b5;
+}
+
+@keyframes demo-progress {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes demo-stage-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes demo-chip-in {
+  0% {
+    opacity: 0;
+    transform: translateY(6px) scale(0.97);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-demo-stage {
+  animation: demo-stage-in 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-demo-chip {
+  animation: demo-chip-in 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

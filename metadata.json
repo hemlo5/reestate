@@ -1,0 +1,8 @@
+{
+  "name": "Housed",
+  "description": "Reverse real estate marketplace where home seekers post property requirements and verified brokers pitch matched homes.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
