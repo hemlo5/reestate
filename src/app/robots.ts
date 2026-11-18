@@ -1,9 +1,13 @@
 import type { MetadataRoute } from 'next';
 
 function resolveBaseUrl(): string {
+  const vercelProd = process.env.VERCEL_PROJECT_PRODUCTION_URL?.trim();
+  const vercelPreview = process.env.VERCEL_URL?.trim();
   for (const raw of [
     process.env.NEXT_PUBLIC_SITE_URL,
     process.env.APP_URL,
+    vercelProd ? `https://${vercelProd}` : undefined,
+    vercelPreview ? `https://${vercelPreview}` : undefined,
     'http://localhost:3000',
   ]) {
     const trimmed = raw?.trim();

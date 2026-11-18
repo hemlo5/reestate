@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { DatabaseSync } from 'node:sqlite';
@@ -63,21 +64,64 @@ function parseJson<T>(raw: unknown, fallback: T): T {
   }
 }
 
+function resolveWritableSqlitePath(): string {
+  if (
+    process.env.VERCEL ||
+    process.env.VERCEL_ENV ||
+    process.env.AWS_LAMBDA_FUNCTION_NAME
+  ) {
+    const tmpDir = path.join(os.tmpdir(), 'housed');
+    try {
+      fs.mkdirSync(tmpDir, { recursive: true });
+      fs.accessSync(tmpDir, fs.constants.W_OK);
+      return path.join(tmpDir, 'housed.sqlite');
+    } catch {
+      return ':memory:';
+    }
+  }
+
+  const localDir = path.resolve(process.cwd(), 'data');
+  try {
+    fs.mkdirSync(localDir, { recursive: true });
+    fs.accessSync(localDir, fs.constants.W_OK);
+    return path.join(localDir, 'housed.sqlite');
+  } catch {
+    const tmpDir = path.join(os.tmpdir(), 'housed');
+    try {
+      fs.mkdirSync(tmpDir, { recursive: true });
+      fs.accessSync(tmpDir, fs.constants.W_OK);
+      return path.join(tmpDir, 'housed.sqlite');
+    } catch {
+      return ':memory:';
+    }
+  }
+}
+
 export class SqliteDbAdapter implements DbAdapter {
   private readonly db: DatabaseSync;
   private readyPromise: Promise<void> | null = null;
 
   constructor(dbPath?: string) {
-    const resolved =
-      dbPath ?? path.resolve(process.cwd(), 'data', 'housed.sqlite');
+    let resolved = dbPath ?? resolveWritableSqlitePath();
     if (resolved !== ':memory:') {
-      fs.mkdirSync(path.dirname(resolved), { recursive: true });
+      try {
+        fs.mkdirSync(path.dirname(resolved), { recursive: true });
+        this.db = new DatabaseSync(resolved);
+      } catch {
+        resolved = ':memory:';
+        this.db = new DatabaseSync(':memory:');
+      }
+    } else {
+      this.db = new DatabaseSync(':memory:');
     }
-    this.db = new DatabaseSync(resolved);
     this.db.exec('PRAGMA busy_timeout = 10000;');
     this.db.exec('PRAGMA foreign_keys = ON;');
     if (resolved !== ':memory:') {
-      this.db.exec('PRAGMA journal_mode = WAL;');
+      try {
+        this.db.exec('PRAGMA journal_mode = WAL;');
+      } catch {
+        // Ignore WAL failure on ephemeral filesystems
+      }
     }
     this.createSchema();
   }

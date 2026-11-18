@@ -167,12 +167,26 @@ class LazyDbAdapter extends BaseDelegatingAdapter {
   }
 }
 
+async function createLocalFallbackAdapter(): Promise<DbAdapter> {
+  try {
+    const { SqliteDbAdapter } = await import('./sqlite-adapter');
+    return new SqliteDbAdapter();
+  } catch (err) {
+    console.warn(
+      'SQLite fallback unavailable, switching to in-memory database:',
+      err instanceof Error ? err.message : err
+    );
+    const { MemoryDbAdapter } = await import('./memory-adapter');
+    return new MemoryDbAdapter();
+  }
+}
+
 class DelegatingSupabaseRestAdapter extends BaseDelegatingAdapter {
   readonly adapterKind = 'delegating-supabase-rest' as const;
   private readonly url: string;
   private readonly serviceKey: string;
   private restPromise: Promise<SupabaseRestDbAdapter> | null = null;
-  private sqlitePromise: Promise<DbAdapter> | null = null;
+  private fallbackPromise: Promise<DbAdapter> | null = null;
   private schemaReady: boolean | null = null;
   private lastProbeAt = 0;
 
@@ -194,16 +208,14 @@ class DelegatingSupabaseRestAdapter extends BaseDelegatingAdapter {
     return this.restPromise;
   }
 
-  private async getSqlite(): Promise<DbAdapter> {
-    if (!this.sqlitePromise) {
-      this.sqlitePromise = import('./sqlite-adapter')
-        .then(({ SqliteDbAdapter }) => new SqliteDbAdapter())
-        .catch((err) => {
-          this.sqlitePromise = null;
-          throw err;
-        });
+  private async getFallback(): Promise<DbAdapter> {
+    if (!this.fallbackPromise) {
+      this.fallbackPromise = createLocalFallbackAdapter().catch((err) => {
+        this.fallbackPromise = null;
+        throw err;
+      });
     }
-    return this.sqlitePromise;
+    return this.fallbackPromise;
   }
 
   override async resolve(): Promise<DbAdapter> {
@@ -211,16 +223,16 @@ class DelegatingSupabaseRestAdapter extends BaseDelegatingAdapter {
     if (this.schemaReady === true) return rest;
     const now = Date.now();
     if (this.schemaReady === false && now - this.lastProbeAt < 10_000) {
-      return this.getSqlite();
+      return this.getFallback();
     }
     this.lastProbeAt = now;
     try {
       const ok = await rest.probeSchema();
       this.schemaReady = ok;
-      return ok ? rest : this.getSqlite();
+      return ok ? rest : this.getFallback();
     } catch {
       this.schemaReady = false;
-      return this.getSqlite();
+      return this.getFallback();
     }
   }
 
@@ -247,10 +259,7 @@ export function getDb(): DbAdapter {
     } else if (sbUrl && sbKey) {
       globalThis.__housedDbInstance = new DelegatingSupabaseRestAdapter(sbUrl, sbKey);
     } else {
-      globalThis.__housedDbInstance = new LazyDbAdapter(async () => {
-        const { SqliteDbAdapter } = await import('./sqlite-adapter');
-        return new SqliteDbAdapter();
-      });
+      globalThis.__housedDbInstance = new LazyDbAdapter(createLocalFallbackAdapter);
     }
   }
   return globalThis.__housedDbInstance;

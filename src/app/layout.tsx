@@ -20,9 +20,13 @@ const dmSans = DM_Sans({
 });
 
 function resolveSiteUrl(): URL {
+  const vercelProd = process.env.VERCEL_PROJECT_PRODUCTION_URL?.trim();
+  const vercelPreview = process.env.VERCEL_URL?.trim();
   const candidates = [
     process.env.NEXT_PUBLIC_SITE_URL,
     process.env.APP_URL,
+    vercelProd ? `https://${vercelProd}` : undefined,
+    vercelPreview ? `https://${vercelPreview}` : undefined,
     'http://localhost:3000',
   ];
   for (const raw of candidates) {
@@ -65,21 +69,26 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const db = getDb();
-  const [user, demoUsers] = await Promise.all([
-    getSessionUser(),
-    db.listDemoUsers(),
-  ]);
-
+  let user: Awaited<ReturnType<typeof getSessionUser>> = null;
+  let demoUsers: Awaited<ReturnType<ReturnType<typeof getDb>['listDemoUsers']>> = [];
   let proposalBadgeCount = 0;
-  if (user) {
-    if (user.role === 'seeker') {
-      const proposals = await db.listProposalsForSeeker(user.id);
-      proposalBadgeCount = proposals.filter((p) => p.status === 'pending').length;
-    } else {
-      const proposals = await db.listProposalsForBroker(user.id);
+
+  try {
+    const db = getDb();
+    [user, demoUsers] = await Promise.all([
+      getSessionUser(),
+      db.listDemoUsers(),
+    ]);
+
+    if (user) {
+      const proposals =
+        user.role === 'seeker'
+          ? await db.listProposalsForSeeker(user.id)
+          : await db.listProposalsForBroker(user.id);
       proposalBadgeCount = proposals.filter((p) => p.status === 'pending').length;
     }
+  } catch (err) {
+    console.error('RootLayout bootstrap error:', err);
   }
 
   return (

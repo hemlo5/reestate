@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { SqliteDbAdapter } from './sqlite-adapter';
+import { MemoryDbAdapter } from './memory-adapter';
 import { AppError } from './errors';
 import { hashPassword, verifyPassword } from '@/lib/auth/password';
 
@@ -198,4 +199,41 @@ test('SqliteDbAdapter enforces seeding, auth, privacy masking, proposal lifecycl
     locality: 'Indiranagar',
   });
   assert.equal(review.rating, 5);
+});
+
+test('MemoryDbAdapter provides seeded demo data, privacy masking, and CRUD fallback', async () => {
+  const db = new MemoryDbAdapter();
+  const demos = await db.listDemoUsers();
+  assert.ok(demos.length >= 4);
+
+  const props = await db.listProperties({ limit: 10 });
+  assert.ok(props.items.length >= 4);
+
+  const seeker = await db.createUser({
+    name: 'Aarav Test',
+    email: 'aarav.mem@example.com',
+    phone: '+91 99000 11223',
+    role: 'seeker',
+    city: 'Bengaluru',
+    authMethod: 'password',
+    passwordHash: await hashPassword('secret123'),
+  });
+
+  const req = await db.createRequirement(seeker, {
+    intent: 'rent',
+    localities: ['Koramangala'],
+    budgetMin: 20000,
+    budgetMax: 35000,
+    propertyType: 'Flat',
+    bedrooms: 2,
+    furnishing: 'Semi-furnished',
+    moveInDate: 'Immediate',
+    amenities: [],
+    notes: '',
+  });
+
+  const leads = await db.getLeadsForBroker({ brokerId: 'broker-1' });
+  const match = leads.items.find((l) => l.requirement.id === req.id);
+  assert.ok(match);
+  assert.equal(match?.requirement.seekerPhone, 'Locked until contact shared');
 });

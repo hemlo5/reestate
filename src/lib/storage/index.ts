@@ -1,4 +1,6 @@
 import fs from 'node:fs/promises';
+import { accessSync, constants, mkdirSync } from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { createClient } from '@supabase/supabase-js';
@@ -66,8 +68,26 @@ function validateSafeKey(key: string): string {
   return normalized;
 }
 
+function resolveUploadBaseDir(): string {
+  if (
+    process.env.VERCEL ||
+    process.env.VERCEL_ENV ||
+    process.env.AWS_LAMBDA_FUNCTION_NAME
+  ) {
+    return path.join(os.tmpdir(), 'housed-uploads');
+  }
+  const localDir = path.resolve(process.cwd(), 'data', 'uploads');
+  try {
+    mkdirSync(localDir, { recursive: true });
+    accessSync(localDir, constants.W_OK);
+    return localDir;
+  } catch {
+    return path.join(os.tmpdir(), 'housed-uploads');
+  }
+}
+
 class LocalDiskStorage implements StorageAdapter {
-  private readonly baseDir = path.resolve(process.cwd(), 'data', 'uploads');
+  private readonly baseDir = resolveUploadBaseDir();
 
   private getFolderDir(bucket: MediaBucket): string {
     return path.join(this.baseDir, bucket === 'public-media' ? 'public' : 'private');

@@ -5,9 +5,13 @@ import { LOCALITIES, slugifyLocality } from '@/lib/matching';
 export const dynamic = 'force-dynamic';
 
 function resolveBaseUrl(): string {
+  const vercelProd = process.env.VERCEL_PROJECT_PRODUCTION_URL?.trim();
+  const vercelPreview = process.env.VERCEL_URL?.trim();
   for (const raw of [
     process.env.NEXT_PUBLIC_SITE_URL,
     process.env.APP_URL,
+    vercelProd ? `https://${vercelProd}` : undefined,
+    vercelPreview ? `https://${vercelPreview}` : undefined,
     'http://localhost:3000',
   ]) {
     const trimmed = raw?.trim();
@@ -24,11 +28,20 @@ function resolveBaseUrl(): string {
 const BASE_URL = resolveBaseUrl();
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const db = getDb();
-  const [propPage, brokers] = await Promise.all([
-    db.listProperties({ limit: 100 }),
-    db.listPublicBrokers(),
-  ]);
+  let propItems: Awaited<ReturnType<ReturnType<typeof getDb>['listProperties']>>['items'] = [];
+  let brokers: Awaited<ReturnType<ReturnType<typeof getDb>['listPublicBrokers']>> = [];
+
+  try {
+    const db = getDb();
+    const [propPage, brokerList] = await Promise.all([
+      db.listProperties({ limit: 100 }),
+      db.listPublicBrokers(),
+    ]);
+    propItems = propPage.items;
+    brokers = brokerList;
+  } catch (err) {
+    console.error('Sitemap DB error:', err);
+  }
 
   const now = new Date();
 
@@ -45,7 +58,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.85,
   }));
 
-  const propertyRoutes: MetadataRoute.Sitemap = propPage.items.map((prop) => ({
+  const propertyRoutes: MetadataRoute.Sitemap = propItems.map((prop) => ({
     url: `${BASE_URL}/properties/${prop.id}`,
     lastModified: prop.createdAt ? new Date(prop.createdAt) : now,
     changeFrequency: 'daily',
