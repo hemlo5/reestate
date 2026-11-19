@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { SqliteDbAdapter } from './sqlite-adapter';
 import { MemoryDbAdapter } from './memory-adapter';
+import { parseValidHttpUrl } from './supabase-config';
 import { AppError } from './errors';
 import { hashPassword, verifyPassword } from '@/lib/auth/password';
 
@@ -236,4 +237,14 @@ test('MemoryDbAdapter provides seeded demo data, privacy masking, and CRUD fallb
   const match = leads.items.find((l) => l.requirement.id === req.id);
   assert.ok(match);
   assert.equal(match?.requirement.seekerPhone, 'Locked until contact shared');
+});
+
+test('parseValidHttpUrl rejects non-URL keys and accepts valid HTTP/HTTPS URLs', () => {
+  assert.equal(parseValidHttpUrl('sb_publishable_abc123'), null);
+  assert.equal(parseValidHttpUrl('ftp://example.com'), null);
+  assert.equal(parseValidHttpUrl('   '), null);
+  assert.equal(
+    parseValidHttpUrl('https://jnltamwtthlweszjrtdz.supabase.co'),
+    'https://jnltamwtthlweszjrtdz.supabase.co'
+  );
 });

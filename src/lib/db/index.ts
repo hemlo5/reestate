@@ -1,6 +1,7 @@
 import type { User, UserRole } from '@/types';
 import { readCookieSession, sanitizeUser } from '@/lib/auth/session';
 import { AppError } from './errors';
+import { getValidatedSupabaseConfig } from './supabase-config';
 import type { DbAdapter } from './types';
 import type { SupabaseRestDbAdapter } from './supabase-rest-adapter';
 
@@ -219,14 +220,21 @@ class DelegatingSupabaseRestAdapter extends BaseDelegatingAdapter {
   }
 
   override async resolve(): Promise<DbAdapter> {
-    const rest = await this.getRest();
-    if (this.schemaReady === true) return rest;
+    if (this.schemaReady === true) {
+      try {
+        return await this.getRest();
+      } catch {
+        this.schemaReady = false;
+        return this.getFallback();
+      }
+    }
     const now = Date.now();
     if (this.schemaReady === false && now - this.lastProbeAt < 10_000) {
       return this.getFallback();
     }
     this.lastProbeAt = now;
     try {
+      const rest = await this.getRest();
       const ok = await rest.probeSchema();
       this.schemaReady = ok;
       return ok ? rest : this.getFallback();
@@ -248,16 +256,18 @@ declare global {
 export function getDb(): DbAdapter {
   if (!globalThis.__housedDbInstance) {
     const dbUrl = process.env.DATABASE_URL?.trim();
-    const sbUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
-    const sbKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
+    const sbConfig = getValidatedSupabaseConfig();
 
     if (dbUrl) {
       globalThis.__housedDbInstance = new LazyDbAdapter(async () => {
         const { SupabaseDbAdapter } = await import('./supabase-adapter');
         return new SupabaseDbAdapter(dbUrl);
       });
-    } else if (sbUrl && sbKey) {
-      globalThis.__housedDbInstance = new DelegatingSupabaseRestAdapter(sbUrl, sbKey);
+    } else if (sbConfig) {
+      globalThis.__housedDbInstance = new DelegatingSupabaseRestAdapter(
+        sbConfig.url,
+        sbConfig.serviceKey
+      );
     } else {
       globalThis.__housedDbInstance = new LazyDbAdapter(createLocalFallbackAdapter);
     }
@@ -267,19 +277,9 @@ export function getDb(): DbAdapter {
 
 export async function getDbBackendInfo(): Promise<DbBackendInfo> {
   const dbUrl = process.env.DATABASE_URL?.trim();
-  const sbUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
-  const sbKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
-  const supabaseStorageReady = Boolean(sbUrl && sbKey);
-
-  let supabaseProjectId: string | null = null;
-  if (sbUrl) {
-    try {
-      const host = new URL(sbUrl).hostname;
-      supabaseProjectId = host.split('.')[0] || null;
-    } catch {
-      supabaseProjectId = null;
-    }
-  }
+  const sbConfig = getValidatedSupabaseConfig();
+  const supabaseStorageReady = Boolean(sbConfig);
+  const supabaseProjectId = sbConfig?.projectId ?? null;
 
   if (dbUrl) {
     return {

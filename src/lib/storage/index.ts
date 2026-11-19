@@ -3,7 +3,8 @@ import { accessSync, constants, mkdirSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
-import { createClient } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import { getValidatedSupabaseConfig } from '@/lib/db/supabase-config';
 
 export type MediaBucket = 'public-media' | 'private-verification';
 
@@ -149,11 +150,13 @@ class LocalDiskStorage implements StorageAdapter {
 }
 
 class SupabaseStorageAdapter implements StorageAdapter {
-  private client = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { persistSession: false, autoRefreshToken: false } }
-  );
+  private client: SupabaseClient;
+
+  constructor(url: string, serviceKey: string) {
+    this.client = createClient(url, serviceKey, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+  }
 
   async saveFile(params: {
     bucket: MediaBucket;
@@ -215,8 +218,9 @@ let cachedStorage: StorageAdapter | null = null;
 
 export function getStorage(): StorageAdapter {
   if (cachedStorage) return cachedStorage;
-  if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    cachedStorage = new SupabaseStorageAdapter();
+  const sbConfig = getValidatedSupabaseConfig();
+  if (sbConfig) {
+    cachedStorage = new SupabaseStorageAdapter(sbConfig.url, sbConfig.serviceKey);
   } else {
     cachedStorage = new LocalDiskStorage();
   }
