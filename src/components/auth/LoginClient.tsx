@@ -9,7 +9,7 @@ export function LoginClient() {
   const params = useSearchParams();
   const { user, logout } = useSession();
   const role = params.get('role') === 'broker' ? 'broker' : 'seeker';
-  const next = params.get('next') || (role === 'broker' ? '/broker/onboarding' : '/');
+  const next = params.get('next') || (role === 'broker' ? '/broker/dashboard' : '/');
   return <main className="mx-auto max-w-xl px-4 py-12 sm:py-16">
     <section className="rounded-3xl border border-[#E6E9EF] bg-white p-7 shadow-sm sm:p-9">
       <p className="text-xs font-semibold text-[#1A56FF]">{role === 'broker' ? 'Broker Portal' : 'Welcome to Housed'}</p>

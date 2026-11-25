@@ -5,6 +5,7 @@ import type { User, UserRole } from '@/types';
 import type { StoredUser } from '@/lib/db/types';
 
 export const SESSION_COOKIE_NAME = 'housed_session';
+export const WORKSPACE_COOKIE_NAME = 'housed_workspace';
 const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 14; // 14 days
 
 function getAuthSecret(): string {
@@ -86,6 +87,13 @@ export async function setSessionCookie(
     path: '/',
     maxAge: Math.floor(SESSION_TTL_MS / 1000),
   });
+  res.cookies.set(WORKSPACE_COOKIE_NAME, '', {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production',
+    path: '/',
+    maxAge: 0,
+  });
 }
 
 export function clearSessionCookie(res: NextResponse): void {
@@ -95,6 +103,23 @@ export function clearSessionCookie(res: NextResponse): void {
     secure: process.env.NODE_ENV === 'production',
     path: '/',
     maxAge: 0,
+  });
+  res.cookies.set(WORKSPACE_COOKIE_NAME, '', {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production',
+    path: '/',
+    maxAge: 0,
+  });
+}
+
+export function setWorkspaceCookie(res: NextResponse, role: 'broker' | 'seeker'): void {
+  res.cookies.set(WORKSPACE_COOKIE_NAME, role, {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production',
+    path: '/',
+    maxAge: Math.floor(SESSION_TTL_MS / 1000),
   });
 }
 
@@ -107,6 +132,16 @@ export async function readCookieSession(): Promise<{ sessionId: string; userId: 
     const store = await cookies();
     const raw = store.get(SESSION_COOKIE_NAME)?.value;
     return verifySessionToken(raw);
+  } catch {
+    return null;
+  }
+}
+
+export async function readWorkspaceRole(): Promise<'broker' | 'seeker' | null> {
+  try {
+    const store = await cookies();
+    const role = store.get(WORKSPACE_COOKIE_NAME)?.value;
+    return role === 'broker' || role === 'seeker' ? role : null;
   } catch {
     return null;
   }

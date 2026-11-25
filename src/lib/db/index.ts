@@ -1,5 +1,5 @@
 import type { User, UserRole } from '@/types';
-import { readCookieSession, sanitizeUser } from '@/lib/auth/session';
+import { readCookieSession, readWorkspaceRole, sanitizeUser } from '@/lib/auth/session';
 import { AppError } from './errors';
 import { getValidatedSupabaseConfig } from './supabase-config';
 import type { DbAdapter } from './types';
@@ -329,7 +329,15 @@ export async function getSessionUser(): Promise<User | null> {
 
   const user = await db.getUserById(session.userId);
   if (!user) return null;
-  return sanitizeUser(user);
+  const safeUser = sanitizeUser(user);
+  const workspaceRole = await readWorkspaceRole();
+  if (user.role === 'broker' && safeUser.brokerProfile && workspaceRole === 'seeker') {
+    return { ...safeUser, role: 'seeker' };
+  }
+  if (user.role === 'broker' && safeUser.brokerProfile && workspaceRole === 'broker') {
+    return safeUser;
+  }
+  return safeUser;
 }
 
 export async function requireAuth(): Promise<User> {

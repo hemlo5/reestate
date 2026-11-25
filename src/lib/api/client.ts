@@ -99,6 +99,13 @@ export const apiClient = {
     });
   },
 
+  switchWorkspace(role: 'broker' | 'seeker') {
+    return apiFetch<{ role: 'broker' | 'seeker' }>('/api/auth/workspace', {
+      method: 'POST',
+      body: JSON.stringify({ role }),
+    });
+  },
+
   updateProfile(updates: UpdateProfileInput) {
     return apiFetch<{ user: User }>('/api/auth/profile', {
       method: 'PUT',

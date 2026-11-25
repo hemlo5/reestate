@@ -19,7 +19,7 @@ import { PropertyImage } from '@/components/PropertyImage';
 
 export function AccountClient() {
   const router = useRouter();
-  const { user, demoUsers, switchDemoUser, updateProfile, logout } = useSession();
+  const { user, demoUsers, switchDemoUser, updateProfile, logout, refreshSession } = useSession();
 
   const [name, setName] = useState(user?.name || '');
   const [phone, setPhone] = useState(user?.phone || '');
@@ -30,6 +30,7 @@ export function AccountClient() {
   const [savedToast, setSavedToast] = useState(false);
   const [error, setError] = useState('');
   const [switchingId, setSwitchingId] = useState<string | null>(null);
+  const [switchingWorkspace, setSwitchingWorkspace] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -59,7 +60,7 @@ export function AccountClient() {
         name: name.trim(),
         phone: phone.trim(),
         city: city.trim(),
-        ...(user.role === 'broker'
+        ...(user.brokerProfile
           ? {
               brokerProfile: {
                 agencyName: agencyName.trim(),
@@ -92,15 +93,39 @@ export function AccountClient() {
     router.push('/');
   };
 
+  const handleWorkspaceSwitch = async () => {
+    if (!user?.brokerProfile) return;
+    setSwitchingWorkspace(true);
+    setError('');
+    try {
+      const nextRole = user.role === 'broker' ? 'seeker' : 'broker';
+      const response = await fetch('/api/auth/workspace', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role: nextRole }),
+      });
+      if (!response.ok) {
+        const result = await response.json().catch(() => ({}));
+        throw new Error(result.error || 'Could not switch workspace.');
+      }
+      await refreshSession();
+      router.push(nextRole === 'broker' ? '/broker/dashboard' : '/seeker/requirements');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not switch workspace.');
+    } finally {
+      setSwitchingWorkspace(false);
+    }
+  };
+
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10 pb-28 md:pb-14 space-y-8">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="font-display text-2xl sm:text-3xl font-bold text-[#0B1324]">
-            Account & Role Switcher
+            Account & Workspace
           </h1>
           <p className="mt-1 text-sm text-[#5E687A]">
-            Switch between Home Seeker and Property Broker accounts or manage your profile details.
+            Manage your profile, switch workspaces, and explore demo accounts.
           </p>
         </div>
 
@@ -131,7 +156,7 @@ export function AccountClient() {
           >
             <Building2 className="h-3.5 w-3.5" />
             <span>
-              {user.role === 'broker' ? 'Edit Broker Onboarding →' : 'Register New Broker →'}
+              {user.brokerProfile ? 'Edit Broker Onboarding →' : 'Register New Broker →'}
             </span>
           </Link>
         </div>
@@ -195,9 +220,9 @@ export function AccountClient() {
               <div className="flex flex-wrap items-center gap-2">
                 <h2 className="font-display text-xl font-bold text-[#0B1324]">{user.name}</h2>
                 <span className="text-xs font-semibold text-[#1A56FF] capitalize">
-                  {user.role === 'broker' ? 'Property Broker' : 'Home Seeker'}
+              {user.role === 'broker' ? 'Property Broker' : user.brokerProfile ? 'Home Seeker Workspace' : 'Home Seeker'}
                 </span>
-                {user.role === 'broker' && (
+              {user.brokerProfile && (
                   <span
                     className={`inline-flex items-center gap-1 text-xs font-semibold ${
                       isBrokerVerified(user) ? 'text-emerald-700' : 'text-amber-700'
@@ -216,7 +241,7 @@ export function AccountClient() {
             </div>
           </div>
 
-          {user.role === 'broker' && (
+          {user.brokerProfile && (
             <div className="flex flex-wrap gap-2">
               <Link
                 href={`/brokers/${user.id}`}
@@ -233,7 +258,18 @@ export function AccountClient() {
               </Link>
             </div>
           )}
+
         </div>
+
+        {user.brokerProfile && (
+          <section className="mb-6 rounded-2xl border border-[#E6E9EF] bg-[#F7F8FA] p-5 sm:p-6">
+            <h2 className="font-display text-base font-bold text-[#0B1324]">Workspace</h2>
+            <p className="mt-1 text-sm text-[#5E687A]">Switch between your broker tools and home seeker workspace. Your broker account and listings stay intact.</p>
+            <button type="button" disabled={switchingWorkspace} onClick={() => void handleWorkspaceSwitch()} className="mt-4 min-h-[42px] rounded-xl bg-[#1A56FF] px-4 text-sm font-semibold text-white disabled:opacity-60">
+              {switchingWorkspace ? 'Switching…' : user.role === 'broker' ? 'Switch to Seeker Dashboard' : 'Switch to Broker Dashboard'}
+            </button>
+          </section>
+        )}
 
         <form onSubmit={handleSave} className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -268,7 +304,7 @@ export function AccountClient() {
             </label>
           </div>
 
-          {user.role === 'broker' && (
+          {user.brokerProfile && (
             <div className="space-y-4 pt-2 border-t border-[#E6E9EF]">
               <Link href="/broker/verification" className="text-sm font-semibold text-[#1A56FF] hover:underline">Submit broker verification</Link>
               <label className="block space-y-1.5">

@@ -25,7 +25,7 @@ export default function AuthCallbackPage() {
         const result = await response.json();
         if (!response.ok) throw new Error(result.error || 'Unable to finish sign-in.');
         const next = params.get('next');
-        const fallback = result.user.role === 'broker' ? '/broker/onboarding' : '/';
+        const fallback = result.user.role === 'broker' ? '/broker/dashboard' : '/';
         router.replace(next && next.startsWith('/') && !next.startsWith('//') ? next : fallback);
       } catch (err) {
         if (alive) setError(err instanceof Error ? err.message : 'Unable to finish Google sign-in.');
