@@ -3,18 +3,33 @@ import { ZodError } from 'zod';
 import { AppError } from '@/lib/db/errors';
 
 export function handleApiError(err: unknown): NextResponse {
-  if (err instanceof AppError) {
+  // Next dev can load the same module through separate server bundles, so
+  // `instanceof` alone is not reliable for application errors across routes.
+  if (
+    err instanceof AppError ||
+    (typeof err === 'object' && err !== null &&
+      (err as { name?: unknown }).name === 'AppError' &&
+      typeof (err as { status?: unknown }).status === 'number' &&
+      typeof (err as { message?: unknown }).message === 'string')
+  ) {
+    const appError = err as AppError;
     return NextResponse.json(
-      { error: err.message, code: err.code },
-      { status: err.status }
+      { error: appError.message, code: appError.code || 'BAD_REQUEST' },
+      { status: appError.status }
     );
   }
-  if (err instanceof ZodError) {
-    const firstIssue = err.issues[0];
+  if (
+    err instanceof ZodError ||
+    (typeof err === 'object' && err !== null &&
+      (err as { name?: unknown }).name === 'ZodError' &&
+      Array.isArray((err as { issues?: unknown }).issues))
+  ) {
+    const issues = (err as ZodError).issues;
+    const firstIssue = issues[0];
     return NextResponse.json(
       {
         error: firstIssue?.message || 'Invalid request payload',
-        issues: err.issues,
+        issues,
         code: 'VALIDATION_ERROR',
       },
       { status: 400 }

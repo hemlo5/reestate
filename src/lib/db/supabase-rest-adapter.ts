@@ -768,10 +768,6 @@ export class SupabaseRestDbAdapter implements DbAdapter {
         'FORBIDDEN'
       );
     }
-    if (!broker.brokerProfile?.reraId?.trim() || !broker.brokerProfile.verificationDocs?.reraAuthority?.trim()) {
-      throw new AppError('Complete your applicable state RERA authority and registration number before listing a property.', 400, 'RERA_REGISTRATION_REQUIRED');
-    }
-
     const id = makeId('prop');
     const intent =
       input.intent ??
