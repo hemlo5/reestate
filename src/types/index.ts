@@ -52,6 +52,7 @@ export type ProposalLifecycleStatus =
 export type VisitStatus = 'requested' | 'confirmed' | 'completed' | 'cancelled';
 
 export interface BrokerVerificationDocs {
+  reraAuthority?: string;
   govtIdType?: string;
   govtIdNumber?: string;
   govtIdFileName?: string;
@@ -126,6 +127,8 @@ export interface Property {
   brokerAgency?: string;
   brokerPhone: string;
   brokerVerified: boolean;
+  brokerReraAuthority?: string;
+  brokerReraId?: string;
   title: string;
   intent: ListingIntent;
   transactionType?: TransactionType;

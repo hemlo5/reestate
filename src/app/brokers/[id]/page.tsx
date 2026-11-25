@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getDb, getSessionUser } from '@/lib/db';
-import { sanitizeUser } from '@/lib/auth/session';
+import { sanitizePublicBroker } from '@/lib/auth/session';
 import { PublicBrokerProfileClient } from '@/components/broker/PublicBrokerProfileClient';
 
 export const dynamic = 'force-dynamic';
@@ -45,10 +45,9 @@ export default async function BrokerProfilePage({
   const { id } = await params;
   const db = getDb();
 
-  const [rawBroker, viewer, propPage, reviews] = await Promise.all([
+  const [rawBroker, viewer, reviews] = await Promise.all([
     db.getUserById(id),
     getSessionUser(),
-    db.listProperties({ brokerId: id, limit: 50 }),
     db.listReviewsForBroker(id),
   ]);
 
@@ -56,7 +55,15 @@ export default async function BrokerProfilePage({
     notFound();
   }
 
-  const broker = sanitizeUser(rawBroker);
+  const brokerProperties = [];
+  let cursor: string | null = null;
+  do {
+    const page = await db.listProperties({ brokerId: id, limit: 50, cursor });
+    brokerProperties.push(...page.items);
+    cursor = page.nextCursor;
+  } while (cursor);
+
+  const broker = sanitizePublicBroker(rawBroker);
   const initialSavedIds = viewer ? await db.getSavedPropertyIds(viewer.id) : [];
 
   const avgRating =
@@ -91,7 +98,7 @@ export default async function BrokerProfilePage({
       />
       <PublicBrokerProfileClient
         broker={broker}
-        brokerProperties={propPage.items}
+        brokerProperties={brokerProperties}
         initialReviews={reviews}
         initialSavedIds={initialSavedIds}
       />

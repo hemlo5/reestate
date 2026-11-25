@@ -24,6 +24,7 @@ export const switchDemoSchema = z.object({
 
 export const brokerVerificationDocsSchema = z
   .object({
+    reraAuthority: z.string().trim().min(2).max(100).optional(),
     govtIdType: z.string().trim().max(80).optional(),
     govtIdNumber: z.string().trim().max(80).optional(),
     govtIdFileName: z.string().trim().max(200).optional(),
@@ -63,7 +64,7 @@ export const brokerProfileInputSchema = z.object({
   yearsExperience: z.coerce.number().int().min(0).max(80).optional(),
   propertiesManagedCount: z.coerce.number().int().min(0).max(10000).optional(),
   website: z.string().trim().max(300).optional(),
-  reraId: z.string().trim().max(120).optional(),
+  reraId: z.string().trim().min(3).max(120).optional(),
   avatarUrl: safeImagePathOrUrl.optional(),
   bio: z.string().trim().max(1200).optional(),
   verificationDocs: brokerVerificationDocsSchema,
@@ -79,6 +80,10 @@ export const registerSchema = z.object({
   authMethod: z.enum(['password', 'otp']).optional().default('password'),
   password: z.string().min(6, 'Password must be at least 6 characters').max(128).optional(),
   brokerProfile: brokerProfileInputSchema.optional(),
+}).superRefine((input, ctx) => {
+  if (input.role === 'broker' && !input.brokerProfile) {
+    ctx.addIssue({ code: 'custom', path: ['brokerProfile'], message: 'Broker profile and state RERA registration are required.' });
+  }
 });
 
 export const updateProfileSchema = z.object({

@@ -4,7 +4,7 @@ import { BrokerOnboardingClient } from '@/components/broker/BrokerOnboardingClie
 export const metadata: Metadata = {
   title: 'Join as a Broker',
   description:
-    'Register as a verified property broker on Housed, showcase your inventory, and pitch directly to active Bengaluru home seekers.',
+    'Create a broker profile on Housed and submit state RERA verification from your dashboard when ready.',
 };
 
 export default function BrokerOnboardingPage() {

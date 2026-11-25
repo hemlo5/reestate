@@ -45,7 +45,7 @@ export function AccountClient() {
     return (
       <AuthGateCard
         title="Manage your Housed account"
-        description="Sign in with your email and password or select a demo account to switch between Home Seeker and Property Broker views."
+        description="Sign in with Google to manage your Housed profile."
       />
     );
   }
@@ -270,6 +270,7 @@ export function AccountClient() {
 
           {user.role === 'broker' && (
             <div className="space-y-4 pt-2 border-t border-[#E6E9EF]">
+              <Link href="/broker/verification" className="text-sm font-semibold text-[#1A56FF] hover:underline">Submit broker verification</Link>
               <label className="block space-y-1.5">
                 <span className="text-xs font-semibold text-[#5E687A]">Agency Name</span>
                 <input

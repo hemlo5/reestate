@@ -144,10 +144,18 @@ export function PropertyCard({
                   aria-label="Verified broker"
                 />
               )}
+              {!property.brokerVerified && (
+                <span className="shrink-0 rounded-full bg-amber-50 px-1.5 py-0.5 text-[9px] font-semibold text-amber-800">Unverified</span>
+              )}
             </Link>
             <p className="text-[11px] text-[#5E687A] truncate">
               Brokerage: {property.brokerageFee}
             </p>
+            {property.brokerReraId && (
+              <p className="mt-1 text-[10px] text-[#5E687A] truncate" title={`${property.brokerReraAuthority || 'State RERA'}: ${property.brokerReraId}`}>
+                {property.brokerReraAuthority || 'State RERA'}: {property.brokerReraId}
+              </p>
+            )}
           </div>
 
           {onViewDetails ? (

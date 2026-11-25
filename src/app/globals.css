@@ -19,6 +19,20 @@
     scroll-behavior: smooth;
   }
 
+  html[data-theme='dark'] {
+    color-scheme: dark;
+    --color-ink: #e8edf7;
+    --color-muted: #aab5c8;
+    --color-surface: #151d2d;
+    --color-border: #303b50;
+    background-color: #0b1220;
+  }
+
+  html[data-theme='dark'] body {
+    background-color: #0b1220;
+    color: #e8edf7;
+  }
+
   h1,
   h2,
   h3,
@@ -28,12 +42,121 @@
   }
 }
 
+/* The existing components use palette utilities directly. These overrides let
+   them keep their light theme classes while gaining a consistent dark palette. */
+html[data-theme='dark'] [class~='bg-white'],
+html[data-theme='dark'] [class~='bg-white/95'] {
+  background-color: #111a2a !important;
+}
+
+html[data-theme='dark'] [class~='bg-[#F7F8FA]'],
+html[data-theme='dark'] [class~='bg-[#FAFBFD]'],
+html[data-theme='dark'] [class~='bg-[#F2F4F8]'],
+html[data-theme='dark'] [class~='bg-[#EEF1F5]'],
+html[data-theme='dark'] [class~='bg-[#EEF2F7]'],
+html[data-theme='dark'] [class~='bg-[#ECEFF4]'],
+html[data-theme='dark'] [class~='bg-[#DCE2EC]'],
+html[data-theme='dark'] [class~='bg-[#DCE4F2]'],
+html[data-theme='dark'] [class~='bg-[#E6E9EF]'] {
+  background-color: #192438 !important;
+}
+
+html[data-theme='dark'] [class~='bg-[#EEF3FF]'],
+html[data-theme='dark'] [class~='bg-[#DFEAFF]'] {
+  background-color: #1b2a46 !important;
+}
+
+html[data-theme='dark'] [class~='text-[#0B1324]'],
+html[data-theme='dark'] [class~='text-[#1C273F]'] {
+  color: #edf2fb !important;
+}
+
+html[data-theme='dark'] [class~='text-[#5E687A]'],
+html[data-theme='dark'] [class~='text-[#707B8E]'],
+html[data-theme='dark'] [class~='text-[#9AA5B5]'] {
+  color: #aab5c8 !important;
+}
+
+html[data-theme='dark'] [class~='border-[#E6E9EF]'],
+html[data-theme='dark'] [class~='border-[#DCE2EC]'],
+html[data-theme='dark'] [class~='border-[#C5CCD8]'] {
+  border-color: #303b50 !important;
+}
+
+html[data-theme='dark'] [class~='hover:bg-[#F7F8FA]']:hover,
+html[data-theme='dark'] [class~='hover:bg-[#ECEFF4]']:hover {
+  background-color: #22304a !important;
+}
+
+html[data-theme='dark'] [class~='placeholder:text-[#9AA5B5]']::placeholder {
+  color: #8492aa !important;
+}
+
+html[data-theme='dark'] input,
+html[data-theme='dark'] textarea,
+html[data-theme='dark'] select {
+  color-scheme: dark;
+}
+
+html[data-theme='dark'] ::-webkit-scrollbar-thumb {
+  background: #46536b;
+}
+
 .tabular-nums {
   font-variant-numeric: tabular-nums;
 }
 
 .text-balance {
   text-wrap: balance;
+}
+
+.legal-copy {
+  color: #5e687a;
+  font-size: 0.95rem;
+  line-height: 1.75;
+}
+
+.legal-copy section {
+  margin-top: 1.75rem;
+}
+
+.legal-copy h2 {
+  margin-bottom: 0.45rem;
+  color: #0b1324;
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.legal-copy a {
+  color: #1a56ff;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.legal-note {
+  margin-top: 2rem;
+  border-radius: 1rem;
+  border: 1px solid #e6e9ef;
+  background: #f7f8fa;
+  padding: 1rem;
+  color: #5e687a;
+  font-size: 0.8rem;
+  line-height: 1.6;
+}
+
+html[data-theme='dark'] .legal-copy,
+html[data-theme='dark'] .legal-note {
+  color: #aab5c8;
+}
+
+html[data-theme='dark'] .legal-copy h2 {
+  color: #edf2fb;
+}
+
+html[data-theme='dark'] .legal-note {
+  border-color: #303b50;
+  background: #192438;
 }
 
 /* Custom subtle scrollbars */

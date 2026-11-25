@@ -11,6 +11,7 @@ import {
   Plus,
   ShieldAlert,
   ShieldCheck,
+  Share2,
   UserCircle2,
 } from 'lucide-react';
 import type {
@@ -44,6 +45,7 @@ interface BrokerDashboardViewProps {
   onManageInventory: () => void;
   onViewProposals: () => void;
   onViewPublicProfile: () => void;
+  onSharePortfolio: () => void;
   onCompleteVerification: () => void;
   onSubmitProposalFor: (req: Requirement) => void;
   onUpdateVisitStatus: (visitId: string, status: VisitStatus) => Promise<void>;
@@ -62,6 +64,7 @@ export function BrokerDashboardView({
   onManageInventory,
   onViewProposals,
   onViewPublicProfile,
+  onSharePortfolio,
   onCompleteVerification,
   onSubmitProposalFor,
   onUpdateVisitStatus,
@@ -124,6 +127,14 @@ export function BrokerDashboardView({
         <div className="flex flex-wrap items-center gap-2.5">
           <button
             type="button"
+            onClick={onSharePortfolio}
+            className="min-h-[42px] px-4 py-2 rounded-xl bg-white hover:bg-[#F7F8FA] border border-[#E6E9EF] text-xs sm:text-sm font-semibold text-[#0B1324] inline-flex items-center gap-1.5 whitespace-nowrap"
+          >
+            <Share2 className="h-4 w-4 text-[#1A56FF]" />
+            <span>Share Portfolio</span>
+          </button>
+          <button
+            type="button"
             onClick={onViewPublicProfile}
             className="min-h-[42px] px-4 py-2 rounded-xl bg-white hover:bg-[#F7F8FA] border border-[#E6E9EF] text-xs sm:text-sm font-semibold text-[#0B1324] inline-flex items-center gap-1.5 whitespace-nowrap"
           >
@@ -141,6 +152,16 @@ export function BrokerDashboardView({
           </button>
         </div>
       </div>
+
+      {!verified && (
+        <section className="flex flex-col gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-sm font-bold text-amber-900">Your broker profile is {verificationLabel.toLowerCase()}.</p>
+            <p className="mt-1 text-xs text-amber-800">Submit your state RERA registration and identity details to request verification.</p>
+          </div>
+          <button type="button" onClick={onCompleteVerification} className="min-h-[40px] shrink-0 rounded-xl bg-amber-800 px-4 text-xs font-semibold text-white hover:bg-amber-900">{verificationLabel === 'Verification pending' ? 'View submission' : 'Start verification'}</button>
+        </section>
+      )}
 
       {/* Four Key Statistics */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

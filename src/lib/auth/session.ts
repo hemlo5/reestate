@@ -59,6 +59,20 @@ export function sanitizeUser(user: StoredUser): User {
   };
 }
 
+export function sanitizePublicBroker(user: StoredUser): User {
+  const safe = sanitizeUser(user);
+  if (!safe.brokerProfile?.verificationDocs) return safe;
+  return {
+    ...safe,
+    brokerProfile: {
+      ...safe.brokerProfile,
+      verificationDocs: {
+        reraAuthority: safe.brokerProfile.verificationDocs.reraAuthority,
+      },
+    },
+  };
+}
+
 export async function setSessionCookie(
   res: NextResponse,
   sessionId: string,

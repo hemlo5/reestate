@@ -106,6 +106,23 @@ export const apiClient = {
     });
   },
 
+  submitBrokerVerification(input: {
+    reraId: string;
+    verificationDocs: {
+      reraAuthority: string;
+      govtIdType: string;
+      govtIdNumber: string;
+      govtIdFileName?: string;
+      govtIdFileKey?: string;
+      submittedAt?: string;
+    };
+  }) {
+    return apiFetch<{ user: User }>('/api/broker/verification', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    });
+  },
+
   // Properties
   listProperties(
     params: Partial<SearchFilters> & {

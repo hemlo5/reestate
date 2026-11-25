@@ -11,6 +11,7 @@ import {
   MapPin,
   MessageSquare,
   Phone,
+  Share2,
   ShieldAlert,
   Star,
 } from 'lucide-react';
@@ -52,6 +53,18 @@ export function PublicBrokerProfileClient({
   const [inquirySent, setInquirySent] = useState(false);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  const [shareMessage, setShareMessage] = useState('');
+
+  const handleSharePortfolio = async () => {
+    const portfolioUrl = `${window.location.origin}/brokers/${broker.id}`;
+    try {
+      await navigator.clipboard.writeText(portfolioUrl);
+      setShareMessage('Portfolio link copied');
+      window.setTimeout(() => setShareMessage(''), 2500);
+    } catch {
+      window.prompt('Copy your public portfolio link:', portfolioUrl);
+    }
+  };
 
   const avgRating =
     reviews.length > 0
@@ -172,8 +185,8 @@ export function PublicBrokerProfileClient({
                     <span>Verified Broker</span>
                   </span>
                 )}
-                {!verified && user?.id === broker.id && (
-                  <span className="inline-flex items-center gap-1 text-xs font-semibold text-amber-700">
+                {!verified && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-800">
                     <ShieldAlert className="h-4 w-4" />
                     <span>{getBrokerVerificationLabel(broker)}</span>
                   </span>
@@ -189,7 +202,7 @@ export function PublicBrokerProfileClient({
 
               {bp?.reraId && (
                 <p className="text-xs text-[#5E687A] tabular-nums">
-                  RERA Reg: {bp.reraId}
+                  {bp.verificationDocs?.reraAuthority || 'State RERA'} registration: {bp.reraId}
                 </p>
               )}
 
@@ -212,6 +225,14 @@ export function PublicBrokerProfileClient({
           </div>
 
           <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+            <button
+              type="button"
+              onClick={() => void handleSharePortfolio()}
+              className="min-h-[44px] px-4 py-2 rounded-xl bg-white hover:bg-[#F7F8FA] border border-[#E6E9EF] text-sm font-semibold text-[#0B1324] inline-flex items-center gap-2"
+            >
+              <Share2 className="h-4 w-4 text-[#1A56FF]" />
+              <span>{shareMessage || 'Share Portfolio'}</span>
+            </button>
             <a
               href={`tel:${bp?.phone || broker.phone}`}
               className="min-h-[44px] px-4 py-2 rounded-xl bg-[#F7F8FA] hover:bg-[#ECEFF4] border border-[#E6E9EF] text-sm font-semibold text-[#0B1324] inline-flex items-center gap-2"

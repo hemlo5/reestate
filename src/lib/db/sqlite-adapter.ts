@@ -43,6 +43,7 @@ import type {
 } from '@/lib/validation/schemas';
 import { AppError } from './errors';
 import { createSeedPayload } from './seed-data';
+import { inferReraAuthority } from '@/lib/rera';
 import type {
   DbAdapter,
   LeadQueryFilters,
@@ -124,6 +125,22 @@ export class SqliteDbAdapter implements DbAdapter {
       }
     }
     this.createSchema();
+    this.backfillPropertyReraSnapshot();
+  }
+
+  private backfillPropertyReraSnapshot(): void {
+    const brokers = this.db.prepare(
+      `SELECT bp.user_id, bp.rera_id, bp.verification_docs_json, u.city
+       FROM broker_profiles bp JOIN users u ON u.id = bp.user_id`
+    ).all() as Array<{ user_id: string; rera_id: string | null; verification_docs_json: string | null; city: string }>;
+    const update = this.db.prepare(
+      'UPDATE properties SET broker_rera_authority = ?, broker_rera_id = ? WHERE broker_id = ?'
+    );
+    for (const broker of brokers) {
+      const docs = parseJson<{ reraAuthority?: string } | null>(broker.verification_docs_json, null);
+      const authority = docs?.reraAuthority || inferReraAuthority(broker.city);
+      update.run(authority, broker.rera_id || '', broker.user_id);
+    }
   }
 
   private createSchema(): void {
@@ -178,6 +195,8 @@ export class SqliteDbAdapter implements DbAdapter {
         broker_agency TEXT,
         broker_phone TEXT NOT NULL DEFAULT '',
         broker_verified INTEGER NOT NULL DEFAULT 0,
+        broker_rera_authority TEXT NOT NULL DEFAULT '',
+        broker_rera_id TEXT NOT NULL DEFAULT '',
         title TEXT NOT NULL,
         intent TEXT NOT NULL CHECK (intent IN ('rent', 'buy')),
         transaction_type TEXT,
@@ -335,6 +354,14 @@ export class SqliteDbAdapter implements DbAdapter {
         PRIMARY KEY (user_id, property_id)
       );
     `);
+
+    const propertyColumns = this.db.prepare('PRAGMA table_info(properties)').all() as Array<{ name: string }>;
+    if (!propertyColumns.some((column) => column.name === 'broker_rera_authority')) {
+      this.db.exec("ALTER TABLE properties ADD COLUMN broker_rera_authority TEXT NOT NULL DEFAULT ''");
+    }
+    if (!propertyColumns.some((column) => column.name === 'broker_rera_id')) {
+      this.db.exec("ALTER TABLE properties ADD COLUMN broker_rera_id TEXT NOT NULL DEFAULT ''");
+    }
   }
 
   private async ensureReady(): Promise<void> {
@@ -618,6 +645,7 @@ export class SqliteDbAdapter implements DbAdapter {
         insertSaved.run(pair.userId, pair.propertyId, now);
       }
     });
+    this.backfillPropertyReraSnapshot();
   }
 
   private withTransaction<T>(fn: () => T): T {
@@ -682,6 +710,8 @@ export class SqliteDbAdapter implements DbAdapter {
       brokerAgency: (row.broker_agency as string | null) ?? undefined,
       brokerPhone: (row.broker_phone as string) || '',
       brokerVerified: Boolean(row.broker_verified),
+      brokerReraAuthority: (row.broker_rera_authority as string | null) || undefined,
+      brokerReraId: (row.broker_rera_id as string | null) || undefined,
       title: row.title as string,
       intent: row.intent as Property['intent'],
       transactionType:
@@ -1077,9 +1107,7 @@ export class SqliteDbAdapter implements DbAdapter {
           ? {
               ...(prevBp?.verificationDocs || {}),
               ...bp.verificationDocs,
-              submittedAt:
-                prevBp?.verificationDocs?.submittedAt ||
-                new Date().toISOString(),
+              submittedAt: bp.verificationDocs.submittedAt || new Date().toISOString(),
             }
           : prevBp?.verificationDocs;
 
@@ -1089,7 +1117,7 @@ export class SqliteDbAdapter implements DbAdapter {
               is_independent = ?, agency_name = ?, agency_address = ?, phone = ?,
               operating_localities_json = ?, property_categories_json = ?, specializations_json = ?,
               years_experience = ?, properties_managed_count = ?, website = ?, rera_id = ?,
-              avatar_url = ?, bio = ?, verification_docs_json = ?
+              avatar_url = ?, bio = ?, verification_docs_json = ?, verification_status = ?
             WHERE user_id = ?`
           )
           .run(
@@ -1107,14 +1135,24 @@ export class SqliteDbAdapter implements DbAdapter {
             nextAvatar,
             bp.bio !== undefined ? bp.bio.trim() : prevBp?.bio ?? '',
             nextDocs ? JSON.stringify(nextDocs) : null,
+            bp.verificationDocs && prevBp?.verificationStatus !== 'verified'
+              ? 'pending'
+              : (prevBp?.verificationStatus ?? 'pending'),
             userId
           );
 
         this.db
           .prepare(
-            `UPDATE properties SET broker_name = ?, broker_agency = ?, broker_phone = ? WHERE broker_id = ?`
+            `UPDATE properties SET broker_name = ?, broker_agency = ?, broker_phone = ?, broker_rera_authority = ?, broker_rera_id = ? WHERE broker_id = ?`
           )
-          .run(nextName, nextAgency || null, nextBrokerPhone, userId);
+          .run(
+            nextName,
+            nextAgency || null,
+            nextBrokerPhone,
+            nextDocs?.reraAuthority || inferReraAuthority(nextCity),
+            bp.reraId !== undefined ? bp.reraId.trim() : prevBp?.reraId || '',
+            userId
+          );
       }
     });
 
@@ -1244,6 +1282,9 @@ export class SqliteDbAdapter implements DbAdapter {
     if (broker.role !== 'broker') {
       throw new AppError('Only verified or registered brokers can list properties.', 403, 'FORBIDDEN');
     }
+    if (!broker.brokerProfile?.reraId?.trim() || !broker.brokerProfile.verificationDocs?.reraAuthority?.trim()) {
+      throw new AppError('Complete your applicable state RERA authority and registration number before listing a property.', 400, 'RERA_REGISTRATION_REQUIRED');
+    }
     const id = makeId('prop');
     const now = new Date().toISOString();
     const intent =
@@ -1321,6 +1362,14 @@ export class SqliteDbAdapter implements DbAdapter {
         input.lng ?? coords?.lng ?? null,
         now
       );
+
+    this.db.prepare(
+      'UPDATE properties SET broker_rera_authority = ?, broker_rera_id = ? WHERE id = ?'
+    ).run(
+      broker.brokerProfile?.verificationDocs?.reraAuthority || inferReraAuthority(broker.city),
+      broker.brokerProfile?.reraId || '',
+      id
+    );
 
     const created = await this.getPropertyById(id);
     if (!created) throw new AppError('Failed to create property', 500, 'INTERNAL_ERROR');

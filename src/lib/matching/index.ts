@@ -132,7 +132,7 @@ export function isBrokerVerified(user?: Pick<User, 'brokerProfile'> | null): boo
 
 export function getBrokerVerificationLabel(
   user?: Pick<User, 'brokerProfile'> | null
-): 'Verified' | 'Verification pending' | 'Verification rejected' {
+): 'Verified' | 'Verification pending' | 'Verification rejected' | 'Unverified' {
   const status = user?.brokerProfile?.verificationStatus;
   if (status === 'verified' || (!status && user?.brokerProfile?.verified)) {
     return 'Verified';
@@ -140,7 +140,10 @@ export function getBrokerVerificationLabel(
   if (status === 'rejected') {
     return 'Verification rejected';
   }
-  return 'Verification pending';
+  const docs = user?.brokerProfile?.verificationDocs;
+  return docs?.submittedAt || docs?.govtIdNumber || user?.brokerProfile?.reraId
+    ? 'Verification pending'
+    : 'Unverified';
 }
 
 export function formatProposalLifecycle(proposal: Proposal): ProposalLifecycleStatus {

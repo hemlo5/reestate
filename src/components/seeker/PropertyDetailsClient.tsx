@@ -18,6 +18,7 @@ import { formatINR } from '@/lib/matching';
 import { apiClient } from '@/lib/api/client';
 import { useSession } from '@/components/providers/AppProviders';
 import { PropertyImage } from '@/components/PropertyImage';
+import { ReportListingLink } from '@/components/ReportListingLink';
 
 interface PropertyDetailsClientProps {
   property: Property;
@@ -272,6 +273,12 @@ export function PropertyDetailsClient({
               ))}
             </div>
           </div>
+
+          <aside className="rounded-2xl border border-[#E6E9EF] bg-[#F7F8FA] p-4 text-sm leading-6 text-[#5E687A]">
+            <p className="font-semibold text-[#0B1324]">Please verify before you transact</p>
+            <p>Housed does not verify title, ownership, approvals, or listing accuracy. Buyers, tenants, and brokers must do their own checks with the relevant authorities and qualified professionals.</p>
+            <Link href="/property-disclaimer" className="mt-2 inline-block text-xs font-semibold text-[#1A56FF]">Read the property-check disclaimer</Link>
+          </aside>
         </div>
 
         {/* Right Sticky Action & Broker Column */}
@@ -285,9 +292,17 @@ export function PropertyDetailsClient({
                   {property.brokerVerified && (
                     <CheckCircle2 className="h-4 w-4 text-[#1A56FF]" />
                   )}
+                  {!property.brokerVerified && (
+                    <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-800">Unverified broker</span>
+                  )}
                 </p>
                 {property.brokerAgency && (
                   <p className="text-xs text-[#5E687A]">{property.brokerAgency}</p>
+                )}
+                {property.brokerReraId && (
+                  <p className="mt-1 text-xs font-semibold text-[#5E687A] tabular-nums">
+                    {property.brokerReraAuthority || 'State RERA'}: {property.brokerReraId}
+                  </p>
                 )}
                 <Link
                   href={`/brokers/${property.brokerId}`}
@@ -303,6 +318,10 @@ export function PropertyDetailsClient({
                 <Phone className="h-3.5 w-3.5 text-[#1A56FF]" />
                 <span>Call</span>
               </a>
+            </div>
+
+            <div className="mt-4">
+              <ReportListingLink listingId={property.id} />
             </div>
 
             <div className="py-4 border-b border-[#E6E9EF] flex items-center justify-between text-sm">

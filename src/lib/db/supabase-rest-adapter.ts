@@ -36,6 +36,7 @@ import type {
   UpdateRequirementInput,
 } from '@/lib/validation/schemas';
 import { AppError } from './errors';
+import { inferReraAuthority } from '@/lib/rera';
 import { createSeedPayload } from './seed-data';
 import {
   mapSupabaseMessage,
@@ -167,13 +168,17 @@ export class SupabaseRestDbAdapter implements DbAdapter {
       if (bpErr) throw new Error(`Supabase seed broker_profiles failed: ${bpErr.message}`);
     }
 
-    const propRows = seed.properties.map((p) => ({
+    const propRows = seed.properties.map((p) => {
+      const owner = seed.users.find((user) => user.id === p.brokerId);
+      return {
       id: p.id,
       broker_id: p.brokerId,
       broker_name: p.brokerName,
       broker_agency: p.brokerAgency ?? null,
       broker_phone: p.brokerPhone,
       broker_verified: p.brokerVerified,
+      broker_rera_authority: p.brokerReraAuthority || owner?.brokerProfile?.verificationDocs?.reraAuthority || inferReraAuthority(owner?.city || p.city || 'Bengaluru'),
+      broker_rera_id: p.brokerReraId || owner?.brokerProfile?.reraId || '',
       title: p.title,
       intent: p.intent,
       transaction_type: p.transactionType ?? null,
@@ -218,7 +223,8 @@ export class SupabaseRestDbAdapter implements DbAdapter {
       lat: p.lat ?? null,
       lng: p.lng ?? null,
       created_at: p.createdAt,
-    }));
+    };
+    });
 
     const { error: pErr } = await this.sb
       .from('properties')
@@ -574,8 +580,7 @@ export class SupabaseRestDbAdapter implements DbAdapter {
         ? {
             ...(prevBp?.verificationDocs || {}),
             ...bp.verificationDocs,
-            submittedAt:
-              prevBp?.verificationDocs?.submittedAt || new Date().toISOString(),
+            submittedAt: bp.verificationDocs.submittedAt || new Date().toISOString(),
           }
         : (prevBp?.verificationDocs ?? null);
 
@@ -612,6 +617,9 @@ export class SupabaseRestDbAdapter implements DbAdapter {
           avatar_url: nextAvatar,
           bio: bp.bio !== undefined ? bp.bio.trim() : (prevBp?.bio ?? ''),
           verification_docs: nextDocs,
+          verification_status: bp.verificationDocs && prevBp?.verificationStatus !== 'verified'
+            ? 'pending'
+            : (prevBp?.verificationStatus ?? 'pending'),
         })
         .eq('user_id', userId);
 
@@ -621,6 +629,8 @@ export class SupabaseRestDbAdapter implements DbAdapter {
           broker_name: nextName,
           broker_agency: nextAgency || null,
           broker_phone: nextBrokerPhone,
+          broker_rera_authority: nextDocs?.reraAuthority || inferReraAuthority(nextCity),
+          broker_rera_id: bp.reraId !== undefined ? bp.reraId.trim() : prevBp?.reraId || '',
         })
         .eq('broker_id', userId);
     }
@@ -758,6 +768,9 @@ export class SupabaseRestDbAdapter implements DbAdapter {
         'FORBIDDEN'
       );
     }
+    if (!broker.brokerProfile?.reraId?.trim() || !broker.brokerProfile.verificationDocs?.reraAuthority?.trim()) {
+      throw new AppError('Complete your applicable state RERA authority and registration number before listing a property.', 400, 'RERA_REGISTRATION_REQUIRED');
+    }
 
     const id = makeId('prop');
     const intent =
@@ -780,6 +793,8 @@ export class SupabaseRestDbAdapter implements DbAdapter {
       broker_agency: broker.brokerProfile?.agencyName || null,
       broker_phone: broker.brokerProfile?.phone || broker.phone,
       broker_verified: brokerVerified,
+      broker_rera_authority: broker.brokerProfile?.verificationDocs?.reraAuthority || inferReraAuthority(broker.city),
+      broker_rera_id: broker.brokerProfile?.reraId || '',
       title: input.title.trim(),
       intent,
       transaction_type:

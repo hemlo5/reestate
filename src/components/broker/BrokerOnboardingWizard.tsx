@@ -43,7 +43,6 @@ const STEP_TITLES = [
   'Agency Details',
   'Operating Areas',
   'Specialization',
-  'Verification',
 ] as const;
 
 const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
@@ -146,6 +145,9 @@ export function BrokerOnboardingWizard({
     bp?.verificationDocs?.agencyRegFileName || ''
   );
   const [reraId, setReraId] = useState(bp?.reraId || '');
+  const [reraAuthority, setReraAuthority] = useState(
+    bp?.verificationDocs?.reraAuthority || ''
+  );
   const [reraCertificateName, setReraCertificateName] = useState(
     bp?.verificationDocs?.reraCertificateName || ''
   );
@@ -266,23 +268,17 @@ export function BrokerOnboardingWizard({
         return false;
       }
     }
-    if (s === 4) {
-      if (!govtIdNumber.trim()) {
-        setError('Government ID number is required for broker verification.');
-        return false;
-      }
-    }
     return true;
   };
 
   const handleNext = () => {
     if (!validateStep(step)) return;
-    setStep((prev) => Math.min(4, prev + 1));
+    setStep((prev) => Math.min(STEP_TITLES.length - 1, prev + 1));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validateStep(4)) return;
+    if (!validateStep(step)) return;
 
     setSubmitting(true);
     setError('');
@@ -298,20 +294,8 @@ export function BrokerOnboardingWizard({
         yearsExperience: Math.max(0, Number(yearsExperience) || 0),
         propertiesManagedCount: Math.max(0, Number(propertiesManagedCount) || 0),
         website: website.trim() || undefined,
-        reraId: reraId.trim() || undefined,
         avatarUrl: avatarUrl || undefined,
         bio: aboutBroker.trim() || undefined,
-        verificationDocs: {
-          govtIdType,
-          govtIdNumber: govtIdNumber.trim(),
-          govtIdFileName: govtIdFileName || undefined,
-          govtIdFileKey: govtIdFileKey || undefined,
-          agencyRegFileName: agencyRegFileName || undefined,
-          reraCertificateName: reraCertificateName || undefined,
-          businessEmail: (businessEmail || email).trim(),
-          businessPhone: (businessPhone || mobile).trim(),
-          submittedAt: new Date().toISOString(),
-        },
       };
 
       if (isEditing && onUpdateExistingBroker) {
@@ -372,34 +356,14 @@ export function BrokerOnboardingWizard({
               Broker Onboarding · Step {step + 1} of {STEP_TITLES.length}
             </p>
             <h1 className="mt-1 font-display text-xl sm:text-2xl font-bold text-[#0B1324]">
-              {isEditing ? 'Update Broker Profile & Verification' : 'Join Housed as a Property Broker'}
+              {isEditing ? 'Update Broker Profile' : 'Join Housed as a Property Broker'}
             </h1>
           </div>
 
-          {isEditing && (
-            <span
-              className={`inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl border ${
-                currentVerificationStatus === 'verified'
-                  ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
-                  : currentVerificationStatus === 'rejected'
-                  ? 'bg-red-50 border-red-200 text-red-700'
-                  : 'bg-amber-50 border-amber-200 text-amber-800'
-              }`}
-            >
-              {currentVerificationStatus === 'verified' ? (
-                <ShieldCheck className="h-4 w-4" />
-              ) : currentVerificationStatus === 'rejected' ? (
-                <XCircle className="h-4 w-4" />
-              ) : (
-                <ShieldAlert className="h-4 w-4" />
-              )}
-              <span>{getBrokerVerificationLabel(existingBroker)}</span>
-            </span>
-          )}
         </div>
 
-        {/* 5-step progress indicator */}
-        <div className="mt-5 grid grid-cols-5 gap-2">
+        {/* 4-step progress indicator */}
+        <div className="mt-5 grid grid-cols-4 gap-2">
           {STEP_TITLES.map((title, idx) => (
             <button
               key={title}
@@ -985,16 +949,33 @@ export function BrokerOnboardingWizard({
                     htmlFor="rera-number"
                     className="block text-xs font-semibold text-[#5E687A] mb-1.5"
                   >
-                    RERA Registration No. (If applicable)
+                    State RERA Registration No. <span className="text-red-600">*</span>
                   </label>
                   <input
                     id="rera-number"
                     type="text"
                     value={reraId}
                     onChange={(e) => setReraId(e.target.value)}
-                    placeholder="PRM/KA/RERA/..."
+                    required
+                    placeholder="Enter your registration number"
                     className="w-full min-h-[44px] px-3.5 rounded-xl bg-[#F7F8FA] border border-[#E6E9EF] text-sm text-[#0B1324]"
                   />
+                  <label
+                    htmlFor="rera-authority"
+                    className="mt-3 block text-xs font-semibold text-[#5E687A] mb-1.5"
+                  >
+                    State RERA Authority <span className="text-red-600">*</span>
+                  </label>
+                  <input
+                    id="rera-authority"
+                    type="text"
+                    required
+                    value={reraAuthority}
+                    onChange={(e) => setReraAuthority(e.target.value)}
+                    placeholder="Karnataka RERA, MahaRERA, K-RERA..."
+                    className="w-full min-h-[44px] px-3.5 rounded-xl bg-[#F7F8FA] border border-[#E6E9EF] text-sm text-[#0B1324]"
+                  />
+                  <p className="mt-1.5 text-xs text-[#5E687A]">Provide the authority that issued your registration. Housed will review the number before marking broker verification complete.</p>
                 </div>
                 <div>
                   <label
@@ -1047,7 +1028,7 @@ export function BrokerOnboardingWizard({
               {step === 0 ? 'Cancel' : 'Back'}
             </button>
 
-            {step < 4 ? (
+            {step < STEP_TITLES.length - 1 ? (
               <button
                 type="button"
                 disabled={uploadingMedia}
@@ -1070,8 +1051,8 @@ export function BrokerOnboardingWizard({
                     : submitting
                     ? 'Saving...'
                     : isEditing
-                    ? 'Save & Submit Verification'
-                    : 'Complete Registration'}
+                    ? 'Save Profile'
+                    : 'Complete Profile'}
                 </span>
               </button>
             )}

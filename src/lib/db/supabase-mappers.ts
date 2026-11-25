@@ -69,6 +69,8 @@ export function mapSupabaseProperty(row: Record<string, unknown>): Property {
     brokerAgency: (row.broker_agency as string | null) ?? undefined,
     brokerPhone: (row.broker_phone as string) || '',
     brokerVerified: Boolean(row.broker_verified),
+    brokerReraAuthority: (row.broker_rera_authority as string | null) ?? undefined,
+    brokerReraId: (row.broker_rera_id as string | null) ?? undefined,
     title: row.title as string,
     intent: row.intent as Property['intent'],
     transactionType:

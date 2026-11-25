@@ -23,6 +23,7 @@ import {
   mapDetailedCategoryToBase,
   mapTransactionToIntent,
 } from '@/lib/matching';
+import { inferReraAuthority } from '@/lib/rera';
 import { hashPassword } from '@/lib/auth/password';
 import { sanitizeUser } from '@/lib/auth/session';
 import type {
@@ -318,6 +319,22 @@ export class SupabaseDbAdapter implements DbAdapter {
         );
       }
     });
+
+    await this.pool.query(
+      `UPDATE public.properties p
+       SET broker_rera_id = coalesce(bp.rera_id, ''),
+           broker_rera_authority = coalesce(
+             nullif(bp.verification_docs ->> 'reraAuthority', ''),
+             case
+               when lower(u.city) like '%bengaluru%' or lower(u.city) like '%karnataka%' then 'Karnataka RERA'
+               when lower(u.city) like '%mumbai%' or lower(u.city) like '%maharashtra%' or lower(u.city) like '%pune%' then 'MahaRERA'
+               when lower(u.city) like '%kerala%' or lower(u.city) like '%kochi%' or lower(u.city) like '%thiruvananthapuram%' then 'K-RERA'
+               else ''
+             end
+           )
+       FROM public.broker_profiles bp JOIN public.users u ON u.id = bp.user_id
+       WHERE p.broker_id = bp.user_id`
+    );
   }
 
   private mapUser(row: Record<string, unknown>, bpRow?: Record<string, unknown>): StoredUser {
@@ -367,6 +384,8 @@ export class SupabaseDbAdapter implements DbAdapter {
       brokerAgency: (row.broker_agency as string | null) ?? undefined,
       brokerPhone: (row.broker_phone as string) || '',
       brokerVerified: Boolean(row.broker_verified),
+      brokerReraAuthority: (row.broker_rera_authority as string | null) ?? undefined,
+      brokerReraId: (row.broker_rera_id as string | null) ?? undefined,
       title: row.title as string,
       intent: row.intent as Property['intent'],
       transactionType: (row.transaction_type as Property['transactionType']) ?? undefined,
@@ -659,7 +678,7 @@ export class SupabaseDbAdapter implements DbAdapter {
         const nextAgency = bp.agencyName !== undefined ? bp.agencyName.trim() : prevBp?.agencyName ?? '';
         const nextBrokerPhone = bp.phone?.trim() || prevBp?.phone || nextPhone;
         const nextDocs = bp.verificationDocs
-          ? { ...(prevBp?.verificationDocs || {}), ...bp.verificationDocs, submittedAt: prevBp?.verificationDocs?.submittedAt || new Date().toISOString() }
+          ? { ...(prevBp?.verificationDocs || {}), ...bp.verificationDocs, submittedAt: bp.verificationDocs.submittedAt || new Date().toISOString() }
           : prevBp?.verificationDocs;
 
         await client.query(
@@ -667,8 +686,8 @@ export class SupabaseDbAdapter implements DbAdapter {
             is_independent = $1, agency_name = $2, agency_address = $3, phone = $4,
             operating_localities = $5, property_categories = $6, specializations = $7,
             years_experience = $8, properties_managed_count = $9, website = $10, rera_id = $11,
-            avatar_url = $12, bio = $13, verification_docs = $14
-          WHERE user_id = $15`,
+            avatar_url = $12, bio = $13, verification_docs = $14, verification_status = $15
+          WHERE user_id = $16`,
           [
             Boolean(bp.isIndependent ?? prevBp?.isIndependent ?? !nextAgency),
             nextAgency,
@@ -684,13 +703,16 @@ export class SupabaseDbAdapter implements DbAdapter {
             nextAvatar,
             bp.bio !== undefined ? bp.bio.trim() : prevBp?.bio ?? '',
             nextDocs ? JSON.stringify(nextDocs) : null,
+            bp.verificationDocs && prevBp?.verificationStatus !== 'verified'
+              ? 'pending'
+              : (prevBp?.verificationStatus ?? 'pending'),
             userId,
           ]
         );
 
         await client.query(
-          'UPDATE public.properties SET broker_name = $1, broker_agency = $2, broker_phone = $3 WHERE broker_id = $4',
-          [nextName, nextAgency || null, nextBrokerPhone, userId]
+          'UPDATE public.properties SET broker_name = $1, broker_agency = $2, broker_phone = $3, broker_rera_authority = $4, broker_rera_id = $5 WHERE broker_id = $6',
+          [nextName, nextAgency || null, nextBrokerPhone, nextDocs?.reraAuthority || inferReraAuthority(nextCity), bp.reraId !== undefined ? bp.reraId.trim() : prevBp?.reraId || '', userId]
         );
       }
     });
@@ -798,6 +820,9 @@ export class SupabaseDbAdapter implements DbAdapter {
     if (broker.role !== 'broker') {
       throw new AppError('Only registered brokers can list properties.', 403, 'FORBIDDEN');
     }
+    if (!broker.brokerProfile?.reraId?.trim() || !broker.brokerProfile.verificationDocs?.reraAuthority?.trim()) {
+      throw new AppError('Complete your applicable state RERA authority and registration number before listing a property.', 400, 'RERA_REGISTRATION_REQUIRED');
+    }
     const id = makeId('prop');
     const intent = input.intent ?? (input.transactionType ? mapTransactionToIntent(input.transactionType) : 'rent');
     const propertyType = input.propertyType ?? (input.listingCategory ? mapDetailedCategoryToBase(input.listingCategory) : 'Flat');
@@ -807,6 +832,7 @@ export class SupabaseDbAdapter implements DbAdapter {
     await this.pool.query(
       `INSERT INTO public.properties (
         id, broker_id, broker_name, broker_agency, broker_phone, broker_verified,
+        broker_rera_authority, broker_rera_id,
         title, intent, transaction_type, listing_category, locality, city, pincode, landmark, address,
         price, security_deposit, maintenance_charges, price_per_sqft, brokerage_amount, brokerage_type,
         deposit_or_maintenance, brokerage_fee, property_type, bedrooms, bathrooms, area_sqft,
@@ -814,7 +840,7 @@ export class SupabaseDbAdapter implements DbAdapter {
         furnishing, parking, balconies, property_age, available_from, amenities,
         description, additional_info, selling_points, video_tour_url, images,
         availability, is_demo, map_x, map_y, lat, lng
-      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30,$31,$32,$33,$34,$35,$36,$37,$38,$39,$40,$41,$42,$43,$44,false,$45,$46,$47,$48)`,
+      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30,$31,$32,$33,$34,$35,$36,$37,$38,$39,$40,$41,$42,$43,$44,$45,$46,false,$47,$48,$49,$50)`,
       [
         id,
         broker.id,
@@ -822,6 +848,8 @@ export class SupabaseDbAdapter implements DbAdapter {
         broker.brokerProfile?.agencyName || null,
         broker.brokerProfile?.phone || broker.phone,
         brokerVerified,
+        broker.brokerProfile?.verificationDocs?.reraAuthority || inferReraAuthority(broker.city),
+        broker.brokerProfile?.reraId || '',
         input.title.trim(),
         intent,
         input.transactionType ?? (intent === 'buy' ? 'For Sale' : 'For Rent'),

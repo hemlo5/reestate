@@ -44,6 +44,16 @@ export function BrokerDashboardClient({
   const isBroker = user?.role === 'broker';
 
   const [proposalModalReq, setProposalModalReq] = useState<Requirement | null>(null);
+  const handleSharePortfolio = async () => {
+    if (!user) return;
+    const portfolioUrl = `${window.location.origin}/brokers/${user.id}`;
+    try {
+      await navigator.clipboard.writeText(portfolioUrl);
+      window.alert('Public portfolio link copied to clipboard.');
+    } catch {
+      window.prompt('Copy your public portfolio link:', portfolioUrl);
+    }
+  };
 
   const { data: requirements = initialRequirements } = useQuery({
     queryKey: ['broker-leads-summary', user?.id],
@@ -140,7 +150,8 @@ export function BrokerDashboardClient({
         onManageInventory={() => router.push('/broker/properties')}
         onViewProposals={() => router.push('/broker/proposals')}
         onViewPublicProfile={() => router.push(`/brokers/${user.id}`)}
-        onCompleteVerification={() => router.push('/broker/onboarding')}
+        onSharePortfolio={() => void handleSharePortfolio()}
+        onCompleteVerification={() => router.push('/broker/verification')}
         onSubmitProposalFor={(req) => setProposalModalReq(req)}
         onUpdateVisitStatus={handleUpdateVisitStatus}
         onMarkNotificationsRead={handleMarkNotificationsRead}

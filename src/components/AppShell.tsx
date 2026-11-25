@@ -14,6 +14,7 @@ import {
   UserCircle2,
 } from 'lucide-react';
 import { BrandMark } from './BrandMark';
+import { ThemeToggle } from './ThemeToggle';
 import { useSession } from './providers/AppProviders';
 
 interface NavLinkItem {
@@ -205,6 +206,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
           {/* Zone 3: Account / Sign In + Single Primary Action */}
           <div className="flex items-center gap-3 shrink-0">
+            <ThemeToggle />
             {user ? (
               <Link
                 href="/account"
@@ -244,6 +246,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </header>
 
       <main className="flex-1">{children}</main>
+
+      <footer className="border-t border-[#E6E9EF] bg-white px-4 py-5 sm:px-6">
+        <div className="mx-auto flex max-w-7xl flex-col gap-3 text-xs text-[#5E687A] sm:flex-row sm:items-center sm:justify-between">
+          <p>© {new Date().getFullYear()} Housed. Property information is provided by users.</p>
+          <nav className="flex flex-wrap gap-x-5 gap-y-2" aria-label="Legal and help links">
+            <Link href="/terms" className="hover:text-[#1A56FF]">Terms of Use</Link>
+            <Link href="/privacy" className="hover:text-[#1A56FF]">Privacy Policy</Link>
+            <Link href="/grievance" className="hover:text-[#1A56FF]">Grievance Officer</Link>
+            <Link href="/property-disclaimer" className="hover:text-[#1A56FF]">Property checks</Link>
+          </nav>
+        </div>
+      </footer>
 
       <nav
         className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-[#E6E9EF]"
