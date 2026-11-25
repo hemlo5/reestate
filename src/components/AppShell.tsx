@@ -1,7 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+import { useState } from 'react';
 import {
   Bookmark,
   Building2,
@@ -17,6 +18,7 @@ import {
 import { BrandMark } from './BrandMark';
 import { ThemeToggle } from './ThemeToggle';
 import { useSession } from './providers/AppProviders';
+import { apiClient } from '@/lib/api/client';
 
 interface NavLinkItem {
   href: string;
@@ -27,10 +29,27 @@ interface NavLinkItem {
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname() || '/';
+  const router = useRouter();
   const { user, proposalBadgeCount } = useSession();
+  const [switchingToBroker, setSwitchingToBroker] = useState(false);
+  const [brokerSwitchFailed, setBrokerSwitchFailed] = useState(false);
 
   const role = user?.role ?? 'seeker';
   const isBroker = role === 'broker';
+
+  const openBrokerDashboard = async () => {
+    if (switchingToBroker) return;
+    setSwitchingToBroker(true);
+    setBrokerSwitchFailed(false);
+    try {
+      await apiClient.switchWorkspace('broker');
+      router.push('/broker/dashboard');
+      router.refresh();
+    } catch {
+      setBrokerSwitchFailed(true);
+      setSwitchingToBroker(false);
+    }
+  };
 
   const seekerLinks: NavLinkItem[] = user
     ? [
@@ -217,6 +236,27 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 <Play className="h-3.5 w-3.5" />
                 <span>Demo</span>
               </button>
+            )}
+            {user?.role === 'seeker' && user.brokerProfile && (
+              <button
+                type="button"
+                onClick={openBrokerDashboard}
+                disabled={switchingToBroker}
+                title={brokerSwitchFailed ? 'Could not open broker dashboard. Try again.' : 'Open your broker dashboard'}
+                className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg border border-[#D8E2FF] bg-[#F5F7FF] px-2.5 md:px-3 text-xs font-semibold text-[#1A56FF] hover:bg-[#EEF3FF] disabled:opacity-60"
+              >
+                <Building2 className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">{switchingToBroker ? 'Opening…' : brokerSwitchFailed ? 'Try again' : 'Broker Dashboard'}</span>
+                <span className="sm:hidden">Broker</span>
+              </button>
+            )}
+            {user?.role === 'seeker' && !user.brokerProfile && (
+              <Link
+                href="/broker/onboarding"
+                className="inline-flex min-h-[36px] items-center rounded-lg border border-[#D8E2FF] bg-[#F5F7FF] px-2.5 md:px-3 text-xs font-semibold text-[#1A56FF] hover:bg-[#EEF3FF]"
+              >
+                For Brokers
+              </Link>
             )}
             <ThemeToggle />
             {user ? (

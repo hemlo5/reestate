@@ -541,6 +541,46 @@ export class SupabaseRestDbAdapter implements DbAdapter {
     return sanitizeUser(created);
   }
 
+  async registerAsBroker(
+    userId: string,
+    input: { name: string; phone: string; city: string; avatarUrl?: string; brokerProfile: NonNullable<UpdateProfileInput['brokerProfile']> }
+  ): Promise<User | null> {
+    await this.ensureReady();
+    const existing = await this.getUserById(userId);
+    if (!existing || existing.role !== 'seeker') return null;
+    const bp = input.brokerProfile;
+    const avatarUrl = input.avatarUrl ?? bp.avatarUrl ?? existing.avatarUrl ?? null;
+    const { data: updatedUsers, error: userError } = await this.sb.from('users').update({
+      name: input.name.trim(), phone: input.phone.trim(), city: input.city.trim() || 'Bengaluru',
+      avatar_url: avatarUrl, role: 'broker',
+    }).eq('id', userId).eq('role', 'seeker').select('id');
+    if (userError) throw new AppError(userError.message, 500, 'INTERNAL_ERROR');
+    if (!updatedUsers?.length) return null;
+    const { error: profileError } = await this.sb.from('broker_profiles').insert({
+      user_id: userId,
+      is_independent: Boolean(bp.isIndependent ?? !bp.agencyName?.trim()),
+      agency_name: bp.agencyName?.trim() || '',
+      agency_address: bp.agencyAddress?.trim() || '',
+      phone: bp.phone?.trim() || input.phone.trim(),
+      operating_localities: bp.operatingLocalities ?? [],
+      property_categories: bp.propertyCategories ?? [],
+      specializations: bp.specializations ?? [],
+      years_experience: bp.yearsExperience ?? 0,
+      properties_managed_count: bp.propertiesManagedCount ?? 0,
+      website: bp.website?.trim() || null,
+      rera_id: bp.reraId?.trim() || null,
+      avatar_url: avatarUrl,
+      verification_status: 'pending', verified: false,
+      bio: bp.bio?.trim() || '', closed_deals_count: 0, verification_docs: null,
+    });
+    if (profileError) {
+      await this.sb.from('users').update({ role: 'seeker' }).eq('id', userId);
+      throw new AppError(profileError.message, 500, 'INTERNAL_ERROR');
+    }
+    const promoted = await this.getUserById(userId);
+    return promoted ? sanitizeUser(promoted) : null;
+  }
+
   async updateUserProfile(
     userId: string,
     updates: UpdateProfileInput

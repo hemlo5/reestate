@@ -174,6 +174,39 @@ export class MemoryDbAdapter implements DbAdapter {
     return sanitizeUser(structuredClone(newUser));
   }
 
+  async registerAsBroker(
+    userId: string,
+    input: { name: string; phone: string; city: string; avatarUrl?: string; brokerProfile: NonNullable<UpdateProfileInput['brokerProfile']> }
+  ): Promise<User | null> {
+    const user = this.users.find((item) => item.id === userId);
+    if (!user || user.role !== 'seeker') return null;
+    const bp = input.brokerProfile;
+    user.name = input.name.trim();
+    user.phone = input.phone.trim();
+    user.city = input.city.trim() || 'Bengaluru';
+    user.avatarUrl = input.avatarUrl ?? bp.avatarUrl ?? user.avatarUrl;
+    user.role = 'broker';
+    user.brokerProfile = {
+      isIndependent: Boolean(bp.isIndependent ?? !bp.agencyName?.trim()),
+      agencyName: bp.agencyName?.trim() || '',
+      agencyAddress: bp.agencyAddress?.trim() || '',
+      phone: bp.phone?.trim() || input.phone.trim(),
+      operatingLocalities: bp.operatingLocalities ?? [],
+      propertyCategories: bp.propertyCategories ?? [],
+      specializations: bp.specializations ?? [],
+      yearsExperience: bp.yearsExperience ?? 0,
+      propertiesManagedCount: bp.propertiesManagedCount ?? 0,
+      website: bp.website?.trim() || undefined,
+      reraId: bp.reraId?.trim() || undefined,
+      avatarUrl: user.avatarUrl,
+      verificationStatus: 'pending',
+      verified: false,
+      bio: bp.bio?.trim() || '',
+      closedDealsCount: 0,
+    };
+    return sanitizeUser(structuredClone(user));
+  }
+
   async updateUserProfile(
     userId: string,
     updates: UpdateProfileInput

@@ -656,6 +656,49 @@ export class SupabaseDbAdapter implements DbAdapter {
     return sanitizeUser(created);
   }
 
+  async registerAsBroker(
+    userId: string,
+    input: { name: string; phone: string; city: string; avatarUrl?: string; brokerProfile: NonNullable<UpdateProfileInput['brokerProfile']> }
+  ): Promise<User | null> {
+    await this.ensureReady();
+    const existing = await this.getUserById(userId);
+    if (!existing || existing.role !== 'seeker') return null;
+    const bp = input.brokerProfile;
+    const avatarUrl = input.avatarUrl ?? bp.avatarUrl ?? existing.avatarUrl ?? null;
+    await this.withTransaction(async (client) => {
+      await client.query(
+        `UPDATE public.users SET name = $1, phone = $2, city = $3, avatar_url = $4, role = 'broker' WHERE id = $5`,
+        [input.name.trim(), input.phone.trim(), input.city.trim() || 'Bengaluru', avatarUrl, userId]
+      );
+      await client.query(
+        `INSERT INTO public.broker_profiles (
+          user_id, is_independent, agency_name, agency_address, phone,
+          operating_localities, property_categories, specializations, years_experience,
+          properties_managed_count, website, rera_id, avatar_url, verification_status,
+          verified, bio, closed_deals_count, verification_docs
+        ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,'pending',false,$14,0,NULL)`,
+        [
+          userId,
+          Boolean(bp.isIndependent ?? !bp.agencyName?.trim()),
+          bp.agencyName?.trim() || '',
+          bp.agencyAddress?.trim() || '',
+          bp.phone?.trim() || input.phone.trim(),
+          bp.operatingLocalities ?? [],
+          bp.propertyCategories ?? [],
+          bp.specializations ?? [],
+          bp.yearsExperience ?? 0,
+          bp.propertiesManagedCount ?? 0,
+          bp.website?.trim() || null,
+          bp.reraId?.trim() || null,
+          avatarUrl,
+          bp.bio?.trim() || '',
+        ]
+      );
+    });
+    const promoted = await this.getUserById(userId);
+    return promoted ? sanitizeUser(promoted) : null;
+  }
+
   async updateUserProfile(userId: string, updates: UpdateProfileInput): Promise<User | null> {
     await this.ensureReady();
     const existing = await this.getUserById(userId);

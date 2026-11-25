@@ -23,6 +23,7 @@ interface SessionContextValue {
   switchDemoUser: (userId: string) => Promise<User>;
   login: (email: string, password: string) => Promise<User>;
   register: (payload: RegisterInput) => Promise<User>;
+  registerAsBroker: (payload: Parameters<typeof apiClient.registerAsBroker>[0]) => Promise<User>;
   updateProfile: (updates: UpdateProfileInput) => Promise<User>;
   logout: () => Promise<void>;
 }
@@ -104,6 +105,17 @@ function SessionProviderInner({
     [queryClient, router]
   );
 
+  const registerAsBroker = useCallback(
+    async (payload: Parameters<typeof apiClient.registerAsBroker>[0]) => {
+      const res = await apiClient.registerAsBroker(payload);
+      setUser(res.user);
+      queryClient.clear();
+      router.refresh();
+      return res.user;
+    },
+    [queryClient, router]
+  );
+
   const updateProfile = useCallback(
     async (updates: UpdateProfileInput) => {
       const res = await apiClient.updateProfile(updates);
@@ -133,6 +145,7 @@ function SessionProviderInner({
       switchDemoUser,
       login,
       register,
+      registerAsBroker,
       updateProfile,
       logout,
     }),
@@ -144,6 +157,7 @@ function SessionProviderInner({
       switchDemoUser,
       login,
       register,
+      registerAsBroker,
       updateProfile,
       logout,
     ]

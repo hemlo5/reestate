@@ -73,6 +73,16 @@ export interface DbAdapter {
   listDemoUsers(): Promise<User[]>;
   listPublicBrokers(): Promise<User[]>;
   createUser(input: RegisterInput & { passwordHash?: string | null }): Promise<User>;
+  registerAsBroker(
+    userId: string,
+    input: {
+      name: string;
+      phone: string;
+      city: string;
+      avatarUrl?: string;
+      brokerProfile: NonNullable<UpdateProfileInput['brokerProfile']>;
+    }
+  ): Promise<User | null>;
   updateUserProfile(userId: string, updates: UpdateProfileInput): Promise<User | null>;
   createSession(userId: string, expiresAtIso: string): Promise<SessionRecord>;
   getSession(sessionId: string): Promise<SessionRecord | null>;

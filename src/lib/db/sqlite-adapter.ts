@@ -1074,6 +1074,43 @@ export class SqliteDbAdapter implements DbAdapter {
     return sanitizeUser(created);
   }
 
+  async registerAsBroker(
+    userId: string,
+    input: { name: string; phone: string; city: string; avatarUrl?: string; brokerProfile: NonNullable<UpdateProfileInput['brokerProfile']> }
+  ): Promise<User | null> {
+    const existing = await this.getUserById(userId);
+    if (!existing || existing.role !== 'seeker') return null;
+    const bp = input.brokerProfile;
+    this.withTransaction(() => {
+      this.db.prepare(`UPDATE users SET name = ?, phone = ?, city = ?, avatar_url = ?, role = 'broker' WHERE id = ?`)
+        .run(input.name.trim(), input.phone.trim(), input.city.trim() || 'Bengaluru', input.avatarUrl ?? bp.avatarUrl ?? existing.avatarUrl ?? null, userId);
+      this.db.prepare(`INSERT INTO broker_profiles (
+        user_id, is_independent, agency_name, agency_address, phone,
+        operating_localities_json, property_categories_json, specializations_json,
+        years_experience, properties_managed_count, website, rera_id, avatar_url,
+        verification_status, verified, bio, closed_deals_count, verification_docs_json
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 0, ?, 0, NULL)`)
+        .run(
+          userId,
+          Boolean(bp.isIndependent ?? !bp.agencyName?.trim()) ? 1 : 0,
+          bp.agencyName?.trim() || '',
+          bp.agencyAddress?.trim() || '',
+          bp.phone?.trim() || input.phone.trim(),
+          JSON.stringify(bp.operatingLocalities ?? []),
+          JSON.stringify(bp.propertyCategories ?? []),
+          JSON.stringify(bp.specializations ?? []),
+          bp.yearsExperience ?? 0,
+          bp.propertiesManagedCount ?? 0,
+          bp.website?.trim() || null,
+          bp.reraId?.trim() || null,
+          input.avatarUrl ?? bp.avatarUrl ?? existing.avatarUrl ?? null,
+          bp.bio?.trim() || ''
+        );
+    });
+    const promoted = await this.getUserById(userId);
+    return promoted ? sanitizeUser(promoted) : null;
+  }
+
   async updateUserProfile(
     userId: string,
     updates: UpdateProfileInput

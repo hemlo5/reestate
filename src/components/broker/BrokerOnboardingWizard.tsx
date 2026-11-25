@@ -32,9 +32,11 @@ import { uploadMediaFile } from '@/lib/storage/client-compress';
 
 interface BrokerOnboardingWizardProps {
   existingBroker?: User | null;
+  existingSeeker?: User | null;
   onCancel: () => void;
   onCompleteNewBroker: (payload: RegisterInput) => Promise<void>;
   onUpdateExistingBroker?: (updates: UpdateProfileInput) => Promise<void>;
+  onPromoteSeekerToBroker?: (updates: UpdateProfileInput) => Promise<void>;
   onSwitchToLogin?: () => void;
 }
 
@@ -79,26 +81,31 @@ function mapSpecializationsToCategories(specs: BrokerSpecialization[]): Property
 
 export function BrokerOnboardingWizard({
   existingBroker,
+  existingSeeker,
   onCancel,
   onCompleteNewBroker,
   onUpdateExistingBroker,
+  onPromoteSeekerToBroker,
   onSwitchToLogin,
 }: BrokerOnboardingWizardProps) {
   const isEditing = Boolean(existingBroker && existingBroker.role === 'broker');
-  const bp = existingBroker?.brokerProfile;
+  const isPromoting = Boolean(existingSeeker);
+  const hasExistingAccount = isEditing || isPromoting;
+  const account = existingBroker ?? existingSeeker;
+  const bp = account?.brokerProfile;
 
   const [step, setStep] = useState(0);
 
   // Step 1 — Personal Information
-  const [fullName, setFullName] = useState(existingBroker?.name || '');
-  const [mobile, setMobile] = useState(existingBroker?.phone || '');
-  const [email, setEmail] = useState(existingBroker?.email || '');
-  const [city, setCity] = useState(existingBroker?.city || 'Bengaluru');
+  const [fullName, setFullName] = useState(account?.name || '');
+  const [mobile, setMobile] = useState(account?.phone || '');
+  const [email, setEmail] = useState(account?.email || '');
+  const [city, setCity] = useState(account?.city || 'Bengaluru');
   const [avatarUrl, setAvatarUrl] = useState(
-    bp?.avatarUrl || existingBroker?.avatarUrl || ''
+    bp?.avatarUrl || account?.avatarUrl || ''
   );
   const [authMethod, setAuthMethod] = useState<'password' | 'otp'>(
-    existingBroker?.authMethod || 'password'
+    account?.authMethod || 'password'
   );
   const [password, setPassword] = useState('');
 
@@ -152,10 +159,10 @@ export function BrokerOnboardingWizard({
     bp?.verificationDocs?.reraCertificateName || ''
   );
   const [businessPhone, setBusinessPhone] = useState(
-    bp?.verificationDocs?.businessPhone || existingBroker?.phone || ''
+    bp?.verificationDocs?.businessPhone || account?.phone || ''
   );
   const [businessEmail, setBusinessEmail] = useState(
-    bp?.verificationDocs?.businessEmail || existingBroker?.email || ''
+    bp?.verificationDocs?.businessEmail || account?.email || ''
   );
 
   const [error, setError] = useState('');
@@ -245,7 +252,7 @@ export function BrokerOnboardingWizard({
         setError('Full name, mobile number, and email address are required.');
         return false;
       }
-      if (!isEditing && authMethod === 'password' && password.trim().length < 6) {
+      if (!hasExistingAccount && authMethod === 'password' && password.trim().length < 6) {
         setError('Please set a password of at least 6 characters (or choose Mobile OTP).');
         return false;
       }
@@ -306,6 +313,14 @@ export function BrokerOnboardingWizard({
           avatarUrl: avatarUrl || undefined,
           brokerProfile: profilePayload,
         });
+      } else if (isPromoting && onPromoteSeekerToBroker) {
+        await onPromoteSeekerToBroker({
+          name: fullName.trim(),
+          phone: mobile.trim(),
+          city: city.trim() || 'Bengaluru',
+          avatarUrl: avatarUrl || undefined,
+          brokerProfile: profilePayload,
+        });
       } else {
         await onCompleteNewBroker({
           name: fullName.trim(),
@@ -338,7 +353,7 @@ export function BrokerOnboardingWizard({
           <span>{isEditing ? 'Back to Dashboard' : 'Back to Marketplace'}</span>
         </button>
 
-        {!isEditing && onSwitchToLogin && (
+        {!hasExistingAccount && onSwitchToLogin && (
           <button
             type="button"
             onClick={onSwitchToLogin}
@@ -356,7 +371,7 @@ export function BrokerOnboardingWizard({
               Broker Onboarding · Step {step + 1} of {STEP_TITLES.length}
             </p>
             <h1 className="mt-1 font-display text-xl sm:text-2xl font-bold text-[#0B1324]">
-              {isEditing ? 'Update Broker Profile' : 'Join Housed as a Property Broker'}
+              {isEditing ? 'Update Broker Profile' : isPromoting ? 'Create Your Broker Workspace' : 'Join Housed as a Property Broker'}
             </h1>
           </div>
 
@@ -480,7 +495,7 @@ export function BrokerOnboardingWizard({
                     id="broker-email"
                     type="email"
                     required
-                    disabled={isEditing}
+                    disabled={hasExistingAccount}
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="arjun@indiranagarrealty.in"
@@ -504,7 +519,7 @@ export function BrokerOnboardingWizard({
                 </div>
               </div>
 
-              {!isEditing && (
+              {!hasExistingAccount && (
                 <div className="pt-2 space-y-3">
                   <span className="block text-xs font-semibold text-[#5E687A]">
                     Authentication Method
@@ -1052,6 +1067,8 @@ export function BrokerOnboardingWizard({
                     ? 'Saving...'
                     : isEditing
                     ? 'Save Profile'
+                    : isPromoting
+                    ? 'Create Broker Workspace'
                     : 'Complete Profile'}
                 </span>
               </button>

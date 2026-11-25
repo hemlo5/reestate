@@ -31,6 +31,9 @@ abstract class BaseDelegatingAdapter implements DbAdapter {
   async createUser(input: Parameters<DbAdapter['createUser']>[0]) {
     return (await this.resolve()).createUser(input);
   }
+  async registerAsBroker(userId: string, input: Parameters<DbAdapter['registerAsBroker']>[1]) {
+    return (await this.resolve()).registerAsBroker(userId, input);
+  }
   async updateUserProfile(userId: string, updates: Parameters<DbAdapter['updateUserProfile']>[1]) {
     return (await this.resolve()).updateUserProfile(userId, updates);
   }

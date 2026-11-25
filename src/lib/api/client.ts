@@ -88,6 +88,18 @@ export const apiClient = {
     });
   },
 
+  registerAsBroker(payload: UpdateProfileInput & {
+    name: string;
+    phone: string;
+    city: string;
+    brokerProfile: NonNullable<UpdateProfileInput['brokerProfile']>;
+  }) {
+    return apiFetch<{ user: User }>('/api/auth/register-broker', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+
   logout() {
     return apiFetch<{ ok: boolean }>('/api/auth/logout', { method: 'POST' });
   },

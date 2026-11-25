@@ -1,11 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { getSupabaseBrowserClient } from '@/lib/auth/supabase-browser';
 
 export default function AuthCallbackPage() {
-  const router = useRouter();
   const params = useSearchParams();
   const [error, setError] = useState('');
 
@@ -26,14 +25,17 @@ export default function AuthCallbackPage() {
         if (!response.ok) throw new Error(result.error || 'Unable to finish sign-in.');
         const next = params.get('next');
         const fallback = result.user.role === 'broker' ? '/broker/dashboard' : '/';
-        router.replace(next && next.startsWith('/') && !next.startsWith('//') ? next : fallback);
+        const destination = next && next.startsWith('/') && !next.startsWith('//') ? next : fallback;
+        // Reload the app after the session-cookie response so the server layout
+        // reads the new session before rendering the account and dashboard UI.
+        window.location.replace(destination);
       } catch (err) {
         if (alive) setError(err instanceof Error ? err.message : 'Unable to finish Google sign-in.');
       }
     };
     void finish();
     return () => { alive = false; };
-  }, [params, router]);
+  }, [params]);
 
   return <main className="mx-auto max-w-xl px-5 py-24 text-center">
     <h1 className="text-2xl font-bold">{error ? 'Sign-in failed' : 'Signing you in…'}</h1>
