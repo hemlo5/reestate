@@ -87,14 +87,14 @@ export function FirstTimeDemoModal({
       className="fixed inset-0 z-50 bg-[#0B1324]/55 flex items-center justify-center p-4"
       role="dialog"
       aria-modal="true"
-      aria-label="How Housed works demo"
+      aria-label="How Hemlo works demo"
     >
       <div className="bg-white rounded-3xl border border-[#E6E9EF] shadow-[0_24px_64px_-12px_rgba(11,19,36,0.28)] max-w-2xl w-full overflow-hidden flex flex-col">
         {/* Header */}
         <div className="px-5 sm:px-7 pt-5 pb-4 border-b border-[#E6E9EF] flex items-start justify-between gap-4">
           <div>
             <p className="text-xs font-semibold text-[#1A56FF]">
-              How Housed Works · Quick Demo
+              How Hemlo Works · Quick Demo
             </p>
             <h2 className="mt-0.5 font-display text-lg sm:text-xl font-bold text-[#0B1324]">
               Post once. Let matched homes arrive in your inbox.

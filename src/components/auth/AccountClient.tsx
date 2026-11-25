@@ -45,8 +45,8 @@ export function AccountClient() {
   if (!user) {
     return (
       <AuthGateCard
-        title="Manage your Housed account"
-        description="Sign in with Google to manage your Housed profile."
+        title="Manage your Hemlo account"
+        description="Sign in with Google to manage your Hemlo profile."
       />
     );
   }

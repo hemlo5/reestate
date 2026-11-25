@@ -371,7 +371,7 @@ export function BrokerOnboardingWizard({
               Broker Onboarding · Step {step + 1} of {STEP_TITLES.length}
             </p>
             <h1 className="mt-1 font-display text-xl sm:text-2xl font-bold text-[#0B1324]">
-              {isEditing ? 'Update Broker Profile' : isPromoting ? 'Create Your Broker Workspace' : 'Join Housed as a Property Broker'}
+              {isEditing ? 'Update Broker Profile' : isPromoting ? 'Create Your Broker Workspace' : 'Join Hemlo as a Property Broker'}
             </h1>
           </div>
 
@@ -990,7 +990,7 @@ export function BrokerOnboardingWizard({
                     placeholder="Karnataka RERA, MahaRERA, K-RERA..."
                     className="w-full min-h-[44px] px-3.5 rounded-xl bg-[#F7F8FA] border border-[#E6E9EF] text-sm text-[#0B1324]"
                   />
-                  <p className="mt-1.5 text-xs text-[#5E687A]">Provide the authority that issued your registration. Housed will review the number before marking broker verification complete.</p>
+                  <p className="mt-1.5 text-xs text-[#5E687A]">Provide the authority that issued your registration. Hemlo will review the number before marking broker verification complete.</p>
                 </div>
                 <div>
                   <label

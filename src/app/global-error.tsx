@@ -15,7 +15,7 @@ export default function GlobalError({
             Something went wrong
           </h1>
           <p className="mt-2 text-sm text-[#5E687A]">
-            {error?.message || 'An unexpected error occurred while rendering Housed.'}
+            {error?.message || 'An unexpected error occurred while rendering Hemlo.'}
           </p>
           <button
             type="button"

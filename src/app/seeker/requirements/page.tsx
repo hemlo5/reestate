@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
   title: 'My Requirements',
-  description: 'Manage your active property briefs and track matched broker responses on Housed.',
+  description: 'Manage your active property briefs and track matched broker responses on Hemlo.',
 };
 
 export default async function SeekerRequirementsPage() {

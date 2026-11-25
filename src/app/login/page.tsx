@@ -4,7 +4,7 @@ import { LoginClient } from '@/components/auth/LoginClient';
 
 export const metadata: Metadata = {
   title: 'Sign In',
-  description: 'Sign in to Housed as a Home Seeker or Property Broker.',
+  description: 'Sign in to Hemlo as a Home Seeker or Property Broker.',
 };
 
 export default function LoginPage() {

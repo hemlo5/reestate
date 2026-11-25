@@ -69,7 +69,7 @@ export function BrokerVerificationClient() {
     <section className="rounded-3xl border border-[#E6E9EF] bg-white p-6 shadow-sm sm:p-8">
       <p className="text-xs font-semibold uppercase tracking-wide text-[#1A56FF]">Broker verification</p>
       <h1 className="mt-2 text-2xl font-bold text-[#0B1324]">Verify your broker profile</h1>
-      <p className="mt-2 text-sm text-[#5E687A]">Submit your applicable state RERA registration and identity details for Housed review. A Verified badge appears only after review is approved.</p>
+      <p className="mt-2 text-sm text-[#5E687A]">Submit your applicable state RERA registration and identity details for Hemlo review. A Verified badge appears only after review is approved.</p>
       <p className="mt-4 rounded-xl bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">Current status: {getBrokerVerificationLabel(user)}</p>
       {verified ? <p className="mt-5 text-sm text-emerald-700">Your broker profile is verified.</p> : <form onSubmit={submit} className="mt-6 space-y-5">
         <div className="grid gap-4 sm:grid-cols-2">

@@ -9,7 +9,7 @@ export function ReportForm({ listingId, contactEmail }: { listingId: string; con
   if (!contactEmail) {
     return (
       <p className="legal-note" role="status">
-        The reporting email is not configured yet. Housed must publish a working grievance contact before accepting reports.
+        The reporting email is not configured yet. Hemlo must publish a working grievance contact before accepting reports.
       </p>
     );
   }

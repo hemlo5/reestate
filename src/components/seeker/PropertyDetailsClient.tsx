@@ -276,7 +276,7 @@ export function PropertyDetailsClient({
 
           <aside className="rounded-2xl border border-[#E6E9EF] bg-[#F7F8FA] p-4 text-sm leading-6 text-[#5E687A]">
             <p className="font-semibold text-[#0B1324]">Please verify before you transact</p>
-            <p>Housed does not verify title, ownership, approvals, or listing accuracy. Buyers, tenants, and brokers must do their own checks with the relevant authorities and qualified professionals.</p>
+            <p>Hemlo does not verify title, ownership, approvals, or listing accuracy. Buyers, tenants, and brokers must do their own checks with the relevant authorities and qualified professionals.</p>
             <Link href="/property-disclaimer" className="mt-2 inline-block text-xs font-semibold text-[#1A56FF]">Read the property-check disclaimer</Link>
           </aside>
         </div>

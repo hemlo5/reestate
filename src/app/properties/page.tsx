@@ -11,7 +11,7 @@ export const dynamic = 'force-dynamic';
 export const metadata: Metadata = {
   title: 'Verified Properties for Rent & Sale',
   description:
-    'Browse verified apartments, independent houses, villas, and studios listed by trusted local brokers on Housed.',
+    'Browse verified apartments, independent houses, villas, and studios listed by trusted local brokers on Hemlo.',
 };
 
 interface PropertiesPageProps {

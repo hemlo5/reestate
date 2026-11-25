@@ -401,7 +401,7 @@ export function PropertyListingWizard({
               ? 'Property Saved as Draft'
               : isEditing
               ? 'Property Listing Updated'
-              : 'Property Published to Housed'}
+              : 'Property Published to Hemlo'}
           </h1>
           <p className="mt-2 text-sm text-[#5E687A] max-w-md mx-auto">
             <span className="font-semibold text-[#0B1324]">{publishedProp.title}</span> in{' '}

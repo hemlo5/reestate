@@ -44,21 +44,21 @@ function resolveSiteUrl(): URL {
 export const metadata: Metadata = {
   metadataBase: resolveSiteUrl(),
   title: {
-    default: 'Housed — Reverse Real Estate Marketplace',
-    template: '%s | Housed',
+    default: 'Hemlo — Reverse Real Estate Marketplace',
+    template: '%s | Hemlo',
   },
   description:
     'Reverse real estate marketplace where home seekers post property requirements and verified local brokers pitch matched homes.',
   openGraph: {
     type: 'website',
-    siteName: 'Housed',
-    title: 'Housed — Reverse Real Estate Marketplace',
+    siteName: 'Hemlo',
+    title: 'Hemlo — Reverse Real Estate Marketplace',
     description:
       'Post your housing criteria once. Receive verified property proposals from trusted local brokers with transparent brokerage.',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Housed — Reverse Real Estate Marketplace',
+    title: 'Hemlo — Reverse Real Estate Marketplace',
     description:
       'Post your housing criteria once. Receive verified property proposals from trusted local brokers.',
   },

@@ -30,7 +30,7 @@ export function AuthGateCard({
       ? 'Property Broker'
       : requiredRole === 'seeker'
       ? 'Home Seeker'
-      : 'Housed';
+      : 'Hemlo';
 
   const handleDemoSwitch = async (id: string) => {
     setError('');

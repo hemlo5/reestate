@@ -11,7 +11,7 @@ export default function RouteError({
   reset: () => void;
 }) {
   useEffect(() => {
-    console.error('Housed route error:', error);
+    console.error('Hemlo route error:', error);
   }, [error]);
 
   return (

@@ -24,7 +24,7 @@ export function BrandMark({ href = '/', onClick }: BrandMarkProps) {
         />
       </svg>
       <span className="font-display text-[19px] font-bold tracking-[-0.025em] text-[#0B1324]">
-        Housed
+        Hemlo
       </span>
     </span>
   );
@@ -35,7 +35,7 @@ export function BrandMark({ href = '/', onClick }: BrandMarkProps) {
         type="button"
         onClick={onClick}
         className="inline-flex items-center whitespace-nowrap shrink-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1A56FF] rounded-lg"
-        aria-label="Housed home"
+        aria-label="Hemlo home"
       >
         {content}
       </button>
@@ -46,7 +46,7 @@ export function BrandMark({ href = '/', onClick }: BrandMarkProps) {
     <Link
       href={href}
       className="inline-flex items-center whitespace-nowrap shrink-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1A56FF] rounded-lg"
-      aria-label="Housed home"
+      aria-label="Hemlo home"
     >
       {content}
     </Link>

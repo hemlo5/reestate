@@ -225,7 +225,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 type="button"
                 onClick={() => window.dispatchEvent(new Event('housed:open-demo'))}
                 className="md:hidden inline-flex min-h-[36px] items-center gap-1.5 rounded-lg border border-[#E6E9EF] bg-white px-2.5 text-xs font-semibold text-[#1A56FF]"
-                aria-label="Watch the Housed demo"
+                aria-label="Watch the Hemlo demo"
               >
                 <Play className="h-3.5 w-3.5" />
                 <span>Demo</span>
@@ -292,7 +292,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       <footer className="border-t border-[#E6E9EF] bg-white px-4 py-5 sm:px-6">
         <div className="mx-auto flex max-w-7xl flex-col gap-3 text-xs text-[#5E687A] sm:flex-row sm:items-center sm:justify-between">
-          <p>© {new Date().getFullYear()} Housed. Property information is provided by users.</p>
+          <p>© {new Date().getFullYear()} Hemlo. Property information is provided by users.</p>
           <nav className="flex flex-wrap gap-x-5 gap-y-2" aria-label="Legal and help links">
             <Link href="/terms" className="hover:text-[#1A56FF]">Terms of Use</Link>
             <Link href="/privacy" className="hover:text-[#1A56FF]">Privacy Policy</Link>

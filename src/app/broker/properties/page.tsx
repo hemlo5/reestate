@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
   title: 'My Properties',
-  description: 'Manage your listed flats, houses, villas, and commercial inventory on Housed.',
+  description: 'Manage your listed flats, houses, villas, and commercial inventory on Hemlo.',
 };
 
 export default async function BrokerPropertiesPage() {

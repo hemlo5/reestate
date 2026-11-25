@@ -115,7 +115,7 @@ export function BrokerInventoryView({
               : `No ${filter === 'available' ? 'active' : filter} properties`}
           </h2>
           <p className="mt-1.5 text-sm text-[#5E687A] max-w-md mx-auto">
-            List residences or commercial spaces you represent so Housed can match them with active customer briefs.
+            List residences or commercial spaces you represent so Hemlo can match them with active customer briefs.
           </p>
           <button
             type="button"

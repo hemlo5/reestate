@@ -370,7 +370,7 @@ export function SeekerSearchClient({
           <div className="hidden lg:block bg-[#F7F8FA] rounded-3xl border border-[#E6E9EF] p-6 sm:p-7">
             <div className="flex items-center justify-between gap-3">
               <h2 className="font-display text-lg font-bold text-[#0B1324]">
-                How Housed flips the search
+                How Hemlo flips the search
               </h2>
               <button
                 type="button"
@@ -559,7 +559,7 @@ export function SeekerSearchClient({
               Are you a property broker?
             </h2>
             <p className="mt-1.5 text-sm sm:text-base text-[#5E687A] leading-relaxed">
-              Join Housed, showcase your properties and connect with people actively looking for homes.
+              Join Hemlo, showcase your properties and connect with people actively looking for homes.
             </p>
           </div>
         </div>
