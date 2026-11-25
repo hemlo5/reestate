@@ -71,6 +71,12 @@ export function SeekerSearchClient({
   }, [initialSavedIds]);
 
   useEffect(() => {
+    const openDemo = () => setDemoOpen(true);
+    window.addEventListener('housed:open-demo', openDemo);
+    return () => window.removeEventListener('housed:open-demo', openDemo);
+  }, []);
+
+  useEffect(() => {
     try {
       const seen = window.localStorage.getItem(DEMO_SEEN_KEY);
       if (!seen) {
@@ -361,7 +367,7 @@ export function SeekerSearchClient({
 
         {/* Right Column */}
         <aside className="lg:col-span-5 flex flex-col gap-6">
-          <div className="bg-[#F7F8FA] rounded-3xl border border-[#E6E9EF] p-6 sm:p-7">
+          <div className="hidden lg:block bg-[#F7F8FA] rounded-3xl border border-[#E6E9EF] p-6 sm:p-7">
             <div className="flex items-center justify-between gap-3">
               <h2 className="font-display text-lg font-bold text-[#0B1324]">
                 How Housed flips the search

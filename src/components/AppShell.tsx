@@ -10,6 +10,7 @@ import {
   LayoutDashboard,
   MapPin,
   MessageSquareText,
+  Play,
   Search,
   UserCircle2,
 } from 'lucide-react';
@@ -206,6 +207,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
           {/* Zone 3: Account / Sign In + Single Primary Action */}
           <div className="flex items-center gap-3 shrink-0">
+            {!isBroker && pathname === '/' && (
+              <button
+                type="button"
+                onClick={() => window.dispatchEvent(new Event('housed:open-demo'))}
+                className="md:hidden inline-flex min-h-[36px] items-center gap-1.5 rounded-lg border border-[#E6E9EF] bg-white px-2.5 text-xs font-semibold text-[#1A56FF]"
+                aria-label="Watch the Housed demo"
+              >
+                <Play className="h-3.5 w-3.5" />
+                <span>Demo</span>
+              </button>
+            )}
             <ThemeToggle />
             {user ? (
               <Link
