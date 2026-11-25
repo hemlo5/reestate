@@ -16,7 +16,6 @@ import {
   UserCircle2,
 } from 'lucide-react';
 import { BrandMark } from './BrandMark';
-import { ThemeToggle } from './ThemeToggle';
 import { useSession } from './providers/AppProviders';
 import { apiClient } from '@/lib/api/client';
 
@@ -115,11 +114,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const ctaHref = isBroker ? '/broker/properties/new' : '/seeker/requirements/new';
   const ctaLabel = isBroker ? '+ List a Property' : 'Post Requirement';
 
-  const hideMobileCta =
-    pathname === '/' ||
-    pathname === '/seeker/requirements/new' ||
-    pathname === '/broker/properties/new';
-
   const mobileSeekerItems = user
     ? [
         { href: '/', label: 'Search', icon: Search, prefixes: ['/', '/map', '/properties'] },
@@ -191,7 +185,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-white text-[#0B1324] flex flex-col">
       <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-[#E6E9EF]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-12 md:h-16 flex items-center justify-between gap-8">
+        <div className="max-w-7xl mx-auto w-full px-3 sm:px-6 lg:px-8 h-12 md:h-16 flex items-center justify-between gap-2 sm:gap-4 md:gap-8">
           {/* Zone 1: Brand Title */}
           <BrandMark href={homeHref} />
 
@@ -225,7 +219,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </nav>
 
           {/* Zone 3: Account / Sign In + Single Primary Action */}
-          <div className="flex items-center gap-3 shrink-0">
+          <div className="flex min-w-0 items-center justify-end gap-1.5 sm:gap-3 shrink-0">
             {!isBroker && pathname === '/' && (
               <button
                 type="button"
@@ -258,7 +252,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 For Brokers
               </Link>
             )}
-            <ThemeToggle />
             {user ? (
               <Link
                 href="/account"
@@ -287,9 +280,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
             <Link
               href={ctaHref}
-              className={`${
-                hideMobileCta ? 'hidden md:inline-flex' : 'inline-flex'
-              } px-3.5 md:px-4 py-1.5 md:py-2 text-xs sm:text-sm font-semibold text-white bg-[#1A56FF] hover:bg-[#1244D8] rounded-xl shadow-sm transition-colors whitespace-nowrap shrink-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1A56FF]`}
+              className="hidden md:inline-flex px-3.5 md:px-4 py-1.5 md:py-2 text-xs sm:text-sm font-semibold text-white bg-[#1A56FF] hover:bg-[#1244D8] rounded-xl shadow-sm transition-colors whitespace-nowrap shrink-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1A56FF]"
             >
               {ctaLabel}
             </Link>
